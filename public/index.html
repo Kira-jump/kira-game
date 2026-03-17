@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kira Game</title>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            background: #1a1a2e;
+            color: white;
+            font-family: Arial, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            user-select: none;
+        }
+        h1 { font-size: 28px; margin-bottom: 10px; }
+        #score {
+            font-size: 48px;
+            font-weight: bold;
+            color: #f0c040;
+            margin-bottom: 40px;
+            transition: transform 0.1s;
+        }
+        #tap-btn {
+            width: 200px;
+            height: 200px;
+            border-radius: 50%;
+            background: radial-gradient(circle, #f0c040, #e07b00);
+            border: none;
+            font-size: 80px;
+            cursor: pointer;
+            box-shadow: 0 0 30px rgba(240,192,64,0.5);
+            transition: transform 0.1s;
+        }
+        #tap-btn:active { transform: scale(0.92); }
+        #tap-per-click { margin-top: 20px; font-size: 16px; color: #aaa; }
+    </style>
+</head>
+<body>
+    <h1>🎮 Kira Game</h1>
+    <div id="score">0</div>
+    <button id="tap-btn">👊</button>
+    <p id="tap-per-click">+1 par tap</p>
+    <script>
+        const tg = window.Telegram.WebApp;
+        tg.expand();
+        let score = 0;
+        const tapBtn = document.getElementById('tap-btn');
+        const scoreDisplay = document.getElementById('score');
+        tapBtn.addEventListener('click', () => {
+            score += 1;
+            scoreDisplay.textContent = score;
+            scoreDisplay.style.transform = 'scale(1.2)';
+            setTimeout(() => {
+                scoreDisplay.style.transform = 'scale(1)';
+            }, 100);
+        });
+    </script>
+</body>
+</html>
