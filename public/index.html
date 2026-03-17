@@ -11,55 +11,387 @@
             background: #1a1a2e;
             color: white;
             font-family: Arial, sans-serif;
+            min-height: 100vh;
+            user-select: none;
+        }
+        /* NAV */
+        .nav {
+            display: flex;
+            justify-content: space-around;
+            background: #16213e;
+            padding: 10px 0;
+            position: fixed;
+            bottom: 0;
+            width: 100%;
+            z-index: 100;
+        }
+        .nav-btn {
+            background: none;
+            border: none;
+            color: #aaa;
+            font-size: 11px;
             display: flex;
             flex-direction: column;
             align-items: center;
-            justify-content: center;
-            height: 100vh;
-            user-select: none;
+            gap: 3px;
+            cursor: pointer;
         }
-        h1 { font-size: 28px; margin-bottom: 10px; }
-        #score {
-            font-size: 48px;
+        .nav-btn.active { color: #f0c040; }
+        .nav-btn span { font-size: 22px; }
+
+        /* PAGES */
+        .page { display: none; padding: 20px; padding-bottom: 80px; }
+        .page.active { display: block; }
+
+        /* HOME */
+        .home {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding-top: 30px;
+        }
+        .username { font-size: 18px; color: #aaa; margin-bottom: 5px; }
+        .coins {
+            font-size: 52px;
             font-weight: bold;
             color: #f0c040;
-            margin-bottom: 40px;
-            transition: transform 0.1s;
+            margin-bottom: 5px;
         }
-        #tap-btn {
-            width: 200px;
-            height: 200px;
+        .per-hour { font-size: 14px; color: #aaa; margin-bottom: 30px; }
+        .tap-btn {
+            width: 220px;
+            height: 220px;
             border-radius: 50%;
             background: radial-gradient(circle, #f0c040, #e07b00);
             border: none;
-            font-size: 80px;
+            font-size: 90px;
             cursor: pointer;
-            box-shadow: 0 0 30px rgba(240,192,64,0.5);
+            box-shadow: 0 0 40px rgba(240,192,64,0.5);
             transition: transform 0.1s;
+            position: relative;
         }
-        #tap-btn:active { transform: scale(0.92); }
-        #tap-per-click { margin-top: 20px; font-size: 16px; color: #aaa; }
+        .tap-btn:active { transform: scale(0.92); }
+        .tap-info { margin-top: 15px; font-size: 14px; color: #aaa; }
+
+        /* CARDS */
+        .cards-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-top: 10px;
+        }
+        .card {
+            background: #16213e;
+            border-radius: 15px;
+            padding: 15px;
+            text-align: center;
+            cursor: pointer;
+            border: 2px solid transparent;
+            transition: border 0.2s;
+        }
+        .card:active { border-color: #f0c040; }
+        .card-icon { font-size: 36px; }
+        .card-name { font-size: 14px; font-weight: bold; margin: 5px 0; }
+        .card-level { font-size: 12px; color: #aaa; }
+        .card-income { font-size: 12px; color: #4caf50; margin: 3px 0; }
+        .card-cost {
+            font-size: 13px;
+            color: #f0c040;
+            margin-top: 8px;
+            font-weight: bold;
+        }
+
+        /* LEADERBOARD */
+        .leader-item {
+            display: flex;
+            align-items: center;
+            background: #16213e;
+            border-radius: 12px;
+            padding: 12px 15px;
+            margin-bottom: 10px;
+            gap: 15px;
+        }
+        .leader-rank { font-size: 20px; width: 30px; }
+        .leader-name { flex: 1; font-size: 15px; }
+        .leader-coins { font-size: 14px; color: #f0c040; font-weight: bold; }
+
+        /* REFERRAL */
+        .ref-box {
+            background: #16213e;
+            border-radius: 15px;
+            padding: 20px;
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        .ref-box h3 { font-size: 18px; margin-bottom: 10px; }
+        .ref-box p { color: #aaa; font-size: 14px; margin-bottom: 15px; }
+        .ref-link {
+            background: #0f3460;
+            border-radius: 10px;
+            padding: 10px;
+            font-size: 12px;
+            color: #f0c040;
+            word-break: break-all;
+            margin-bottom: 15px;
+        }
+        .copy-btn {
+            background: #f0c040;
+            color: #1a1a2e;
+            border: none;
+            border-radius: 10px;
+            padding: 12px 30px;
+            font-size: 15px;
+            font-weight: bold;
+            cursor: pointer;
+            width: 100%;
+        }
+        .ref-stats {
+            background: #16213e;
+            border-radius: 15px;
+            padding: 20px;
+            text-align: center;
+        }
+        .ref-stats h3 { font-size: 18px; margin-bottom: 10px; }
+        .ref-count { font-size: 48px; font-weight: bold; color: #f0c040; }
+
+        /* FLOATING TAP */
+        .float-tap {
+            position: fixed;
+            font-size: 20px;
+            font-weight: bold;
+            color: #f0c040;
+            pointer-events: none;
+            animation: floatUp 1s ease forwards;
+            z-index: 999;
+        }
+        @keyframes floatUp {
+            0% { opacity: 1; transform: translateY(0); }
+            100% { opacity: 0; transform: translateY(-80px); }
+        }
+
+        h2 { font-size: 20px; margin-bottom: 15px; color: #f0c040; }
     </style>
 </head>
 <body>
-    <h1>🎮 Kira Game</h1>
-    <div id="score">0</div>
-    <button id="tap-btn">👊</button>
-    <p id="tap-per-click">+1 par tap</p>
-    <script>
-        const tg = window.Telegram.WebApp;
-        tg.expand();
-        let score = 0;
-        const tapBtn = document.getElementById('tap-btn');
-        const scoreDisplay = document.getElementById('score');
-        tapBtn.addEventListener('click', () => {
-            score += 1;
-            scoreDisplay.textContent = score;
-            scoreDisplay.style.transform = 'scale(1.2)';
-            setTimeout(() => {
-                scoreDisplay.style.transform = 'scale(1)';
-            }, 100);
+
+<!-- PAGE HOME -->
+<div class="page active" id="page-home">
+    <div class="home">
+        <div class="username" id="username">Joueur</div>
+        <div class="coins" id="coins">0</div>
+        <div class="per-hour" id="per-hour">⚡ 0 coins/heure</div>
+        <button class="tap-btn" id="tap-btn">👊</button>
+        <div class="tap-info">+<span id="tap-value">1</span> par tap</div>
+    </div>
+</div>
+
+<!-- PAGE CARDS -->
+<div class="page" id="page-cards">
+    <h2>🃏 Cartes</h2>
+    <div class="cards-grid" id="cards-grid"></div>
+</div>
+
+<!-- PAGE LEADERBOARD -->
+<div class="page" id="page-leaderboard">
+    <h2>🏆 Classement</h2>
+    <div id="leaderboard-list"></div>
+</div>
+
+<!-- PAGE REFERRAL -->
+<div class="page" id="page-referral">
+    <h2>👥 Parrainage</h2>
+    <div class="ref-box">
+        <h3>Invite tes amis !</h3>
+        <p>Tu gagnes <strong>500 coins</strong> par ami invité 🎉</p>
+        <div class="ref-link" id="ref-link">Chargement...</div>
+        <button class="copy-btn" id="copy-btn">📋 Copier le lien</button>
+    </div>
+    <div class="ref-stats">
+        <h3>Amis invités</h3>
+        <div class="ref-count" id="ref-count">0</div>
+    </div>
+</div>
+
+<!-- NAV -->
+<nav class="nav">
+    <button class="nav-btn active" onclick="showPage('home', this)">
+        <span>🎮</span>Jouer
+    </button>
+    <button class="nav-btn" onclick="showPage('cards', this)">
+        <span>🃏</span>Cartes
+    </button>
+    <button class="nav-btn" onclick="showPage('leaderboard', this)">
+        <span>🏆</span>Top
+    </button>
+    <button class="nav-btn" onclick="showPage('referral', this)">
+        <span>👥</span>Amis
+    </button>
+</nav>
+
+<script>
+const tg = window.Telegram.WebApp;
+tg.expand();
+
+const telegramId = tg.initDataUnsafe?.user?.id?.toString() || 'test123';
+const telegramUsername = tg.initDataUnsafe?.user?.username || 'Joueur';
+
+const API = '';
+let userData = null;
+
+const CARDS = [
+    { id: 'mine', icon: '⛏️', name: 'Mine', baseCost: 100, baseIncome: 10 },
+    { id: 'factory', icon: '🏭', name: 'Usine', baseCost: 500, baseIncome: 50 },
+    { id: 'bank', icon: '🏦', name: 'Banque', baseCost: 2000, baseIncome: 200 },
+    { id: 'rocket', icon: '🚀', name: 'Fusée', baseCost: 10000, baseIncome: 1000 },
+    { id: 'robot', icon: '🤖', name: 'Robot', baseCost: 50000, baseIncome: 5000 },
+    { id: 'satellite', icon: '🛸', name: 'Satellite', baseCost: 200000, baseIncome: 20000 },
+];
+
+// Navigation
+function showPage(name, btn) {
+    document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+    document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+    document.getElementById('page-' + name).classList.add('active');
+    btn.classList.add('active');
+    if (name === 'leaderboard') loadLeaderboard();
+}
+
+// Charger les données
+async function loadUser() {
+    try {
+        const res = await fetch(`${API}/api/user/${telegramId}`);
+        if (res.ok) {
+            userData = await res.json();
+        } else {
+            userData = { telegramId, username: telegramUsername, coins: 0, coinsPerTap: 1, coinsPerHour: 0, referrals: 0, cards: [] };
+        }
+        updateUI();
+    } catch {
+        userData = { telegramId, username: telegramUsername, coins: 0, coinsPerTap: 1, coinsPerHour: 0, referrals: 0, cards: [] };
+        updateUI();
+    }
+}
+
+function updateUI() {
+    document.getElementById('username').textContent = '👤 ' + (userData.username || telegramUsername);
+    document.getElementById('coins').textContent = formatNumber(Math.floor(userData.coins));
+    document.getElementById('per-hour').textContent = '⚡ ' + formatNumber(userData.coinsPerHour) + ' coins/heure';
+    document.getElementById('tap-value').textContent = userData.coinsPerTap;
+    document.getElementById('ref-count').textContent = userData.referrals || 0;
+    document.getElementById('ref-link').textContent = `https://t.me/YourBot?start=${telegramId}`;
+    renderCards();
+}
+
+function formatNumber(n) {
+    if (n >= 1000000) return (n / 1000000).toFixed(1) + 'M';
+    if (n >= 1000) return (n / 1000).toFixed(1) + 'K';
+    return n.toString();
+}
+
+// TAP
+document.getElementById('tap-btn').addEventListener('click', async (e) => {
+    if (!userData) return;
+    userData.coins += userData.coinsPerTap;
+    document.getElementById('coins').textContent = formatNumber(Math.floor(userData.coins));
+
+    // Animation
+    const float = document.createElement('div');
+    float.className = 'float-tap';
+    float.textContent = '+' + userData.coinsPerTap;
+    float.style.left = (e.clientX - 20) + 'px';
+    float.style.top = (e.clientY - 20) + 'px';
+    document.body.appendChild(float);
+    setTimeout(() => float.remove(), 1000);
+
+    // Sauvegarde toutes les 5 taps
+    if (Math.floor(userData.coins) % 5 === 0) saveCoins();
+});
+
+async function saveCoins() {
+    try {
+        await fetch(`${API}/api/user/${telegramId}/tap`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ coins: Math.floor(userData.coins) })
         });
-    </script>
+    } catch {}
+}
+
+// CARDS
+function renderCards() {
+    const grid = document.getElementById('cards-grid');
+    grid.innerHTML = '';
+    CARDS.forEach(card => {
+        const userCard = userData.cards?.find(c => c.cardId === card.id);
+        const level = userCard ? userCard.level : 0;
+        const cost = Math.floor(card.baseCost * Math.pow(1.5, level));
+        const income = card.baseIncome * (level + 1);
+
+        const div = document.createElement('div');
+        div.className = 'card';
+        div.innerHTML = `
+            <div class="card-icon">${card.icon}</div>
+            <div class="card-name">${card.name}</div>
+            <div class="card-level">Niveau ${level}</div>
+            <div class="card-income">+${formatNumber(income)}/h</div>
+            <div class="card-cost">💰 ${formatNumber(cost)}</div>
+        `;
+        div.onclick = () => buyCard(card.id, cost, income);
+        grid.appendChild(div);
+    });
+}
+
+async function buyCard(cardId, cost, coinsPerHour) {
+    if (!userData || userData.coins < cost) {
+        alert('Pas assez de coins !');
+        return;
+    }
+    try {
+        const res = await fetch(`${API}/api/user/${telegramId}/buy-card`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ cardId, cost, coinsPerHour })
+        });
+        if (res.ok) {
+            userData = await res.json();
+            updateUI();
+        }
+    } catch {}
+}
+
+// LEADERBOARD
+async function loadLeaderboard() {
+    try {
+        const res = await fetch(`${API}/api/leaderboard`);
+        const users = await res.json();
+        const list = document.getElementById('leaderboard-list');
+        const medals = ['🥇', '🥈', '🥉'];
+        list.innerHTML = users.map((u, i) => `
+            <div class="leader-item">
+                <div class="leader-rank">${medals[i] || (i + 1)}</div>
+                <div class="leader-name">${u.username}</div>
+                <div class="leader-coins">💰 ${formatNumber(u.coins)}</div>
+            </div>
+        `).join('');
+    } catch {}
+}
+
+// COPY REFERRAL
+document.getElementById('copy-btn').addEventListener('click', () => {
+    const link = `https://t.me/YourBot?start=${telegramId}`;
+    navigator.clipboard.writeText(link).then(() => alert('Lien copié ! 🎉'));
+});
+
+// Revenus passifs auto toutes les secondes
+setInterval(() => {
+    if (userData && userData.coinsPerHour > 0) {
+        userData.coins += userData.coinsPerHour / 3600;
+        document.getElementById('coins').textContent = formatNumber(Math.floor(userData.coins));
+    }
+}, 1000);
+
+// Init
+loadUser();
+</script>
 </body>
 </html>
