@@ -259,7 +259,7 @@ function showPage(name, btn) {
 // Charger les données
 async function loadUser() {
     try {
-        const res = await fetch(`${API}/api/user/${telegramId}`);
+        const res = await fetch(`${API}/api/user/init`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ telegramId, username: telegramUsername }) });
         if (res.ok) {
             userData = await res.json();
         } else {

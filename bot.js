@@ -8,13 +8,10 @@ const app = express();
 app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
 
-// Connexion Supabase
 const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_KEY);
-console.log('✅ Supabase connecté !');
 
 const bot = new TelegramBot(process.env.BOT_TOKEN, { polling: true });
 
-// Commande /start
 bot.onText(/\/start (.+)/, async (msg, match) => {
     const chatId = msg.chat.id;
     await registerUser(msg, match[1]);
@@ -30,20 +27,17 @@ bot.onText(/\/start$/, async (msg) => {
 async function registerUser(msg, referrerId) {
     const telegramId = msg.chat.id.toString();
     const username = msg.chat.username || msg.chat.first_name || 'Joueur';
-
     const { data: existing } = await supabase
         .from('users')
         .select('*')
         .eq('telegram_id', telegramId)
         .single();
-
     if (!existing) {
         await supabase.from('users').insert({
             telegram_id: telegramId,
             username,
             referred_by: referrerId || null
         });
-
         if (referrerId) {
             const { data: ref } = await supabase
                 .from('users')
@@ -64,40 +58,41 @@ function sendWelcome(chatId) {
     bot.sendMessage(chatId, '🎮 Bienvenue sur Kira Game !', {
         reply_markup: {
             inline_keyboard: [[
-                {
-                    text: '🎮 Jouer',
-                    web_app: { url: process.env.APP_URL }
-                }
+                { text: '🎮 Jouer', web_app: { url: process.env.APP_URL } }
             ]]
         }
     });
 }
 
-// API - Récupérer un joueur
-app.get('/api/user/:telegramId', async (req, res) => {
+// API - Créer ou récupérer un joueur
+app.post('/api/user/init', async (req, res) => {
     try {
-        const { data: user } = await supabase
+        const { telegramId, username } = req.body;
+        let { data: user } = await supabase
             .from('users')
             .select('*')
-            .eq('telegram_id', req.params.telegramId)
+            .eq('telegram_id', telegramId)
             .single();
-
-        if (!user) return res.status(404).json({ error: 'Utilisateur non trouvé' });
-
+        if (!user) {
+            const { data: newUser } = await supabase
+                .from('users')
+                .insert({ telegram_id: telegramId, username })
+                .select()
+                .single();
+            user = newUser;
+        }
         // Calcul revenus passifs
         const now = Date.now();
         const lastSeen = new Date(user.last_seen).getTime();
         const diffHours = (now - lastSeen) / (1000 * 60 * 60);
         const earned = Math.floor(diffHours * user.coins_per_hour);
-
         if (earned > 0) {
             await supabase
                 .from('users')
                 .update({ coins: user.coins + earned, last_seen: new Date() })
-                .eq('telegram_id', req.params.telegramId);
+                .eq('telegram_id', telegramId);
             user.coins += earned;
         }
-
         res.json(user);
     } catch (err) {
         res.status(500).json({ error: err.message });
@@ -129,15 +124,12 @@ app.post('/api/user/:telegramId/buy-card', async (req, res) => {
             .select('*')
             .eq('telegram_id', req.params.telegramId)
             .single();
-
         if (!user) return res.status(404).json({ error: 'Utilisateur non trouvé' });
         if (user.coins < cost) return res.status(400).json({ error: 'Pas assez de coins' });
-
         const cards = user.cards || [];
         const cardIndex = cards.findIndex(c => c.cardId === cardId);
         if (cardIndex >= 0) cards[cardIndex].level += 1;
         else cards.push({ cardId, level: 1 });
-
         const { data: updated } = await supabase
             .from('users')
             .update({
@@ -148,7 +140,6 @@ app.post('/api/user/:telegramId/buy-card', async (req, res) => {
             .eq('telegram_id', req.params.telegramId)
             .select()
             .single();
-
         res.json(updated);
     } catch (err) {
         res.status(500).json({ error: err.message });
