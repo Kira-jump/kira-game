@@ -304,7 +304,7 @@ document.getElementById('tap-btn').addEventListener('click', async (e) => {
     setTimeout(() => float.remove(), 1000);
 
     // Sauvegarde toutes les 5 taps
-    if (Math.floor(userData.coins) % 5 === 0) saveCoins();
+    saveCoins();
 });
 
 async function saveCoins() {
