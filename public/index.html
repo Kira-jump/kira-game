@@ -824,13 +824,19 @@ async function loadUser() {
             coinsPerHour = parseInt(user.coins_per_hour) || 0;
             cards = user.cards || [];
             referrals = parseInt(user.referrals) || 0;
-            // Photo profil Telegram
-            const tgUser = tg.initDataUnsafe?.user;
-            if (tgUser?.photo_url) {
-                document.getElementById("player-avatar").src = tgUser.photo_url;
-            } else {
-                document.getElementById("player-avatar").style.display = "none";
-            }
+            // Photo profil via API
+            fetch(API + '/api/user/' + telegramId + '/photo')
+                .then(r => r.json())
+                .then(data => {
+                    if (data.photoUrl) {
+                        document.getElementById('player-avatar').src = data.photoUrl;
+                        document.getElementById('player-avatar').style.display = 'block';
+                    } else {
+                        document.getElementById('player-avatar').style.display = 'none';
+                    }
+                }).catch(() => {
+                    document.getElementById('player-avatar').style.display = 'none';
+                });
             currentAvatar = user.avatar || '👊';
             document.getElementById('player-avatar').textContent = currentAvatar;
             

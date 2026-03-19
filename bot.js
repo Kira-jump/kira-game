@@ -375,3 +375,18 @@ app.post('/api/user/:telegramId/avatar', async (req, res) => {
         res.json(user);
     } catch (err) { res.status(500).json({ error: err.message }); }
 });
+
+// GET PROFILE PHOTO
+app.get('/api/user/:telegramId/photo', async (req, res) => {
+    try {
+        const photos = await bot.getUserProfilePhotos(req.params.telegramId, { limit: 1 });
+        if (photos.total_count > 0) {
+            const fileId = photos.photos[0][0].file_id;
+            const file = await bot.getFile(fileId);
+            const photoUrl = `https://api.telegram.org/file/bot${process.env.BOT_TOKEN}/${file.file_path}`;
+            res.json({ photoUrl });
+        } else {
+            res.json({ photoUrl: null });
+        }
+    } catch (err) { res.json({ photoUrl: null }); }
+});
