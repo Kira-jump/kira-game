@@ -875,6 +875,7 @@ let walletAddress = null;
 async function initTonConnect() {
     try {
         tonConnectUI = new TON_CONNECT_UI.TonConnectUI({
+            restoreConnection: false,
             manifestUrl: 'https://raw.githubusercontent.com/Kira-jump/kira-game/main/public/tonconnect-manifest.json',
         });
         tonConnectUI.onStatusChange(wallet => {
@@ -883,6 +884,7 @@ async function initTonConnect() {
                 document.getElementById('wallet-btn').style.display = 'none';
                 document.getElementById('wallet-connected').style.display = 'block';
                 document.getElementById('wallet-address').textContent = walletAddress.slice(0,8) + '...' + walletAddress.slice(-6);
+                localStorage.setItem('wallet_' + telegramId, walletAddress);
                 saveWallet(walletAddress);
             } else {
                 walletAddress = null;
@@ -909,7 +911,16 @@ async function saveWallet(address) {
     } catch(e) {}
 }
 
-initTonConnect();
+// Disconnect wallet au chargement pour chaque utilisateur
+async function checkWalletForUser() {
+    await initTonConnect();
+    // Vérifie si le wallet sauvegardé appartient à cet utilisateur
+    const savedWallet = localStorage.getItem('wallet_' + telegramId);
+    if (!savedWallet && tonConnectUI) {
+        try { await tonConnectUI.disconnect(); } catch(e) {}
+    }
+}
+checkWalletForUser();
 loadUser();
 renderBoosts();
 loadMissions();
