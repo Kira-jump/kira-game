@@ -690,6 +690,8 @@ document.getElementById('tap-btn').addEventListener('click', (e) => {
     document.body.appendChild(float);
     setTimeout(() => float.remove(), 800);
 
+    totalCoins += coinsPerTap;
+    updateLevelUI();
     clearTimeout(saveTimeout);
     saveTimeout = setTimeout(saveCoins, 1500);
 });
