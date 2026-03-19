@@ -761,7 +761,7 @@ const BOOSTS = [
     { id: 'boost_x5', icon: '💎', name: 'x5 Boost', multiplier: 5, duration: 30, cooldown: 7200 },
 ];
 
-let boostCooldowns = JSON.parse(localStorage.getItem('boostCooldowns') || '{}');
+let boostCooldowns = JSON.parse(localStorage.getItem('boostCooldowns_' + telegramId) || '{}');
 let activeBoost = null;
 let boostTimer = null;
 let boostCountdown = 0;
@@ -808,7 +808,7 @@ function activateBoost(boostId) {
     document.getElementById('boost-countdown').textContent = boostCountdown;
 
     boostCooldowns[boostId] = now + (boost.cooldown * 1000);
-    localStorage.setItem('boostCooldowns', JSON.stringify(boostCooldowns));
+    localStorage.setItem('boostCooldowns_' + telegramId, JSON.stringify(boostCooldowns));
 
     boostTimer = setInterval(() => {
         boostCountdown--;
