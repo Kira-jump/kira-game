@@ -759,7 +759,7 @@ async function loadUser() {
             coinsPerHour = parseInt(user.coins_per_hour) || 0;
             cards = user.cards || [];
             referrals = parseInt(user.referrals) || 0;
-            totalCoins = parseInt(user.total_coins) || 0;
+            totalCoins = parseInt(user.total_coins) || parseInt(user.coins) || 0;
             updateLevelUI();
         }
     } catch(e) { console.log('Erreur:', e); }
