@@ -172,11 +172,17 @@ app.post('/api/user/:telegramId/buy-card', async (req, res) => {
     } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-// LEADERBOARD
+// LEADERBOARD PAR NIVEAU
 app.get('/api/leaderboard', async (req, res) => {
     try {
-        const { data: users } = await supabase.from('users').select('username, coins').order('coins', { ascending: false }).limit(10);
-        res.json(users);
+        const level = req.query.level || 'Bronze';
+        const { data: users } = await supabase
+            .from('users')
+            .select('username, coins, level, avatar')
+            .eq('level', level)
+            .order('coins', { ascending: false })
+            .limit(20);
+        res.json(users || []);
     } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
