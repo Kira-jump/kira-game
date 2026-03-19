@@ -630,7 +630,7 @@
 <div class="page active" id="page-home">
     <div class="home">
         <div class="player-info">
-            <div class="player-avatar-display" id="player-avatar" onclick="openAvatarSelector()">👊</div>
+            <img id="player-avatar" src="" style="width:36px;height:36px;border-radius:50%;object-fit:cover;background:linear-gradient(135deg,#f0c040,#e07b00);" onerror="this.style.display='none'">
             <div class="player-name" id="username">Joueur</div>
         </div>
 
@@ -824,9 +824,16 @@ async function loadUser() {
             coinsPerHour = parseInt(user.coins_per_hour) || 0;
             cards = user.cards || [];
             referrals = parseInt(user.referrals) || 0;
+            // Photo profil Telegram
+            const tgUser = tg.initDataUnsafe?.user;
+            if (tgUser?.photo_url) {
+                document.getElementById("player-avatar").src = tgUser.photo_url;
+            } else {
+                document.getElementById("player-avatar").style.display = "none";
+            }
             currentAvatar = user.avatar || '👊';
             document.getElementById('player-avatar').textContent = currentAvatar;
-            document.getElementById('tap-btn').textContent = currentAvatar;
+            
             totalCoins = parseInt(user.coins) || 0;
             updateLevelUI();
         }
