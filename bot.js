@@ -26,14 +26,21 @@ bot.onText(/\/start$/, async (msg) => {
 async function registerUser(msg, referrerId) {
     const telegramId = msg.chat.id.toString();
     const username = msg.chat.username || msg.chat.first_name || 'Joueur';
-    const { data: existing } = await supabase
-        .from('users').select('*').eq('telegram_id', telegramId).single();
+    const { data: existing } = await supabase.from('users').select('*').eq('telegram_id', telegramId).single();
     if (!existing) {
         await supabase.from('users').insert({ telegram_id: telegramId, username, referred_by: referrerId || null });
         if (referrerId) {
             const { data: ref } = await supabase.from('users').select('*').eq('telegram_id', referrerId).single();
-            if (ref) await supabase.from('users').update({ coins: ref.coins + 500, referrals: ref.referrals + 1 }).eq('telegram_id', referrerId);
+            if (ref) {
+                await supabase.from('users').update({ coins: ref.coins + 500, referrals: ref.referrals + 1 }).eq('telegram_id', referrerId);
+                // Notifie le parrain
+                sendNotification(referrerId, 'referral', '👥 Un ami vient de rejoindre Kira Game grâce à toi ! Tu as reçu 500 coins ! 🎉');
+            }
         }
+        // Notification de bienvenue
+        setTimeout(() => {
+            bot.sendMessage(telegramId, '🎮 Bienvenue sur Kira Game !\n\n✅ Missions quotidiennes\n⚡ Boosts temporaires\n🃏 Cartes à collecter\n💎 Wallet TON\n\nTape /start pour jouer !');
+        }, 2000);
     }
 }
 
@@ -42,6 +49,45 @@ function sendWelcome(chatId) {
         reply_markup: { inline_keyboard: [[{ text: '🎮 Jouer', web_app: { url: process.env.APP_URL } }]] }
     });
 }
+
+async function sendNotification(telegramId, type, message) {
+    try {
+        const today = new Date().toISOString().split('T')[0];
+        const { data: existing } = await supabase
+            .from('notifications')
+            .select('*')
+            .eq('telegram_id', telegramId)
+            .eq('type', type)
+            .eq('sent_date', today)
+            .single();
+        if (!existing) {
+            await bot.sendMessage(telegramId, message, {
+                reply_markup: { inline_keyboard: [[{ text: '🎮 Jouer', web_app: { url: process.env.APP_URL } }]] }
+            });
+            await supabase.from('notifications').insert({ telegram_id: telegramId, type, sent_date: today });
+        }
+    } catch(e) { console.log('Notification error:', e); }
+}
+
+// NOTIFICATIONS AUTOMATIQUES
+async function sendDailyNotifications() {
+    try {
+        const { data: users } = await supabase.from('users').select('telegram_id, coins, coins_per_hour');
+        if (!users) return;
+        for (const user of users) {
+            const earned = Math.floor(user.coins_per_hour * 8);
+            const message = earned > 0
+                ? `🌅 Bonjour ! Tu as gagné ${earned} coins pendant ton absence !\n💰 Viens collecter tes récompenses et accomplir tes missions du jour !`
+                : `🌅 Bonjour ! Tes missions quotidiennes t'attendent !\n🎯 Connecte-toi pour gagner des coins !`;
+            await sendNotification(user.telegram_id, 'daily', message);
+            await new Promise(r => setTimeout(r, 100));
+        }
+        console.log('✅ Notifications quotidiennes envoyées !');
+    } catch(e) { console.log('Daily notif error:', e); }
+}
+
+// Lance les notifications toutes les 8 heures
+setInterval(sendDailyNotifications, 8 * 60 * 60 * 1000);
 
 // INIT USER
 app.post('/api/user/init', async (req, res) => {
@@ -59,6 +105,10 @@ app.post('/api/user/init', async (req, res) => {
         if (earned > 0) {
             await supabase.from('users').update({ coins: user.coins + earned, last_seen: new Date() }).eq('telegram_id', telegramId);
             user.coins += earned;
+            // Notifie des revenus passifs
+            if (earned >= 100) {
+                sendNotification(telegramId, 'passive_income', `💰 Tu as gagné ${earned} coins en revenus passifs ! Continue à améliorer tes cartes !`);
+            }
         }
         res.json(user);
     } catch (err) { res.status(500).json({ error: err.message }); }
@@ -105,11 +155,7 @@ app.get('/api/leaderboard', async (req, res) => {
 app.get('/api/missions/:telegramId', async (req, res) => {
     try {
         const today = new Date().toISOString().split('T')[0];
-        const { data: completed } = await supabase
-            .from('missions')
-            .select('mission_id')
-            .eq('telegram_id', req.params.telegramId)
-            .eq('completed_at', today);
+        const { data: completed } = await supabase.from('missions').select('mission_id').eq('telegram_id', req.params.telegramId).eq('completed_at', today);
         res.json(completed || []);
     } catch (err) { res.status(500).json({ error: err.message }); }
 });
@@ -119,22 +165,35 @@ app.post('/api/missions/:telegramId/complete', async (req, res) => {
     try {
         const { missionId, reward } = req.body;
         const today = new Date().toISOString().split('T')[0];
-        const { data: existing } = await supabase
-            .from('missions')
-            .select('*')
-            .eq('telegram_id', req.params.telegramId)
-            .eq('mission_id', missionId)
-            .eq('completed_at', today)
-            .single();
+        const { data: existing } = await supabase.from('missions').select('*').eq('telegram_id', req.params.telegramId).eq('mission_id', missionId).eq('completed_at', today).single();
         if (existing) return res.status(400).json({ error: 'Mission déjà complétée' });
-        await supabase.from('missions').insert({
-            telegram_id: req.params.telegramId,
-            mission_id: missionId,
-            completed_at: today
-        });
+        await supabase.from('missions').insert({ telegram_id: req.params.telegramId, mission_id: missionId, completed_at: today });
         const { data: user } = await supabase.from('users').select('*').eq('telegram_id', req.params.telegramId).single();
         const { data: updated } = await supabase.from('users').update({ coins: user.coins + reward }).eq('telegram_id', req.params.telegramId).select().single();
+        // Notifie
+        sendNotification(req.params.telegramId, 'mission_' + missionId, `🎯 Mission accomplie ! Tu as gagné ${reward} coins ! 🎉`);
         res.json(updated);
+    } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+// SAVE WALLET
+app.post('/api/user/:telegramId/wallet', async (req, res) => {
+    try {
+        const { walletAddress } = req.body;
+        const { data: user } = await supabase.from('users').update({ wallet_address: walletAddress }).eq('telegram_id', req.params.telegramId).select().single();
+        sendNotification(req.params.telegramId, 'wallet_connected', '💎 Ton wallet TON est connecté à Kira Game ! Tu es prêt pour recevoir tes tokens ! 🚀');
+        res.json(user);
+    } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+// SEND MANUAL NOTIFICATION
+app.post('/api/notify/:telegramId', async (req, res) => {
+    try {
+        const { message } = req.body;
+        await bot.sendMessage(req.params.telegramId, message, {
+            reply_markup: { inline_keyboard: [[{ text: '🎮 Jouer', web_app: { url: process.env.APP_URL } }]] }
+        });
+        res.json({ success: true });
     } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
@@ -143,17 +202,3 @@ console.log('🤖 Bot démarré...');
 console.log('SUPABASE_URL:', process.env.SUPABASE_URL ? '✅' : '❌');
 console.log('SUPABASE_KEY:', process.env.SUPABASE_KEY ? '✅' : '❌');
 console.log('BOT_TOKEN:', process.env.BOT_TOKEN ? '✅' : '❌');
-
-// SAVE WALLET
-app.post('/api/user/:telegramId/wallet', async (req, res) => {
-    try {
-        const { walletAddress } = req.body;
-        const { data: user } = await supabase
-            .from('users')
-            .update({ wallet_address: walletAddress })
-            .eq('telegram_id', req.params.telegramId)
-            .select()
-            .single();
-        res.json(user);
-    } catch (err) { res.status(500).json({ error: err.message }); }
-});
