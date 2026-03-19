@@ -143,3 +143,17 @@ console.log('🤖 Bot démarré...');
 console.log('SUPABASE_URL:', process.env.SUPABASE_URL ? '✅' : '❌');
 console.log('SUPABASE_KEY:', process.env.SUPABASE_KEY ? '✅' : '❌');
 console.log('BOT_TOKEN:', process.env.BOT_TOKEN ? '✅' : '❌');
+
+// SAVE WALLET
+app.post('/api/user/:telegramId/wallet', async (req, res) => {
+    try {
+        const { walletAddress } = req.body;
+        const { data: user } = await supabase
+            .from('users')
+            .update({ wallet_address: walletAddress })
+            .eq('telegram_id', req.params.telegramId)
+            .select()
+            .single();
+        res.json(user);
+    } catch (err) { res.status(500).json({ error: err.message }); }
+});
