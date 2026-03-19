@@ -573,7 +573,12 @@
 <!-- HOME -->
 <div class="page active" id="page-home">
     <div class="home">
-        <div class="player-info">
+        <div style="display:flex;justify-content:flex-end;margin-bottom:10px">
+        <button onclick="toggleLang()" id="lang-btn" style="background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:20px;padding:6px 15px;color:white;font-family:'Nunito',sans-serif;font-weight:800;font-size:13px;cursor:pointer;">
+            🇫🇷 FR
+        </button>
+    </div>
+    <div class="player-info">
             <div class="player-avatar">👤</div>
             <div class="player-name" id="username">Joueur</div>
         </div>
@@ -1118,19 +1123,18 @@ const TRANSLATIONS = {
 };
 
 // Détecte la langue
-// Détection langue multiple sources
-let userLang = 'fr';
-try {
-    const tgLang = tg.initDataUnsafe?.user?.language_code;
-    const navLang = navigator.language || navigator.userLanguage;
-    const rawLang = tgLang || navLang || 'fr';
-    userLang = rawLang.split('-')[0].toLowerCase();
-    if (!TRANSLATIONS[userLang]) userLang = 'en';
-    console.log('Langue détectée:', userLang, 'TG:', tgLang, 'Nav:', navLang);
-} catch(e) { userLang = 'en'; }
+let userLang = localStorage.getItem('lang_' + telegramId) || 'fr';
 const lang = TRANSLATIONS[userLang] || TRANSLATIONS['en'];
 
 // Applique les traductions
+function toggleLang() {
+    userLang = userLang === 'fr' ? 'en' : 'fr';
+    localStorage.setItem('lang_' + telegramId, userLang);
+    document.getElementById('lang-btn').textContent = userLang === 'fr' ? '🇫🇷 FR' : '🇬🇧 EN';
+    applyTranslations();
+    updateUI();
+}
+
 function applyTranslations() {
     document.querySelector('.coins-label').textContent = lang.your_coins;
     document.querySelector('.tap-info').textContent = lang.tap_info;
