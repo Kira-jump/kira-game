@@ -1,10 +1,12 @@
 require('dotenv').config();
 const express = require('express');
+const cors = require('cors');
 const TelegramBot = require('node-telegram-bot-api');
 const { createClient } = require('@supabase/supabase-js');
 const path = require('path');
 
 const app = express();
+app.use(cors());
 app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
 
@@ -64,10 +66,10 @@ function sendWelcome(chatId) {
     });
 }
 
-// API - Créer ou récupérer un joueur
 app.post('/api/user/init', async (req, res) => {
     try {
         const { telegramId, username } = req.body;
+        console.log('Init user:', telegramId, username);
         let { data: user } = await supabase
             .from('users')
             .select('*')
@@ -81,7 +83,6 @@ app.post('/api/user/init', async (req, res) => {
                 .single();
             user = newUser;
         }
-        // Calcul revenus passifs
         const now = Date.now();
         const lastSeen = new Date(user.last_seen).getTime();
         const diffHours = (now - lastSeen) / (1000 * 60 * 60);
@@ -95,11 +96,11 @@ app.post('/api/user/init', async (req, res) => {
         }
         res.json(user);
     } catch (err) {
+        console.error('Init error:', err);
         res.status(500).json({ error: err.message });
     }
 });
 
-// API - Sauvegarder les coins
 app.post('/api/user/:telegramId/tap', async (req, res) => {
     try {
         const { coins } = req.body;
@@ -115,7 +116,6 @@ app.post('/api/user/:telegramId/tap', async (req, res) => {
     }
 });
 
-// API - Acheter une carte
 app.post('/api/user/:telegramId/buy-card', async (req, res) => {
     try {
         const { cardId, cost, coinsPerHour } = req.body;
@@ -146,7 +146,6 @@ app.post('/api/user/:telegramId/buy-card', async (req, res) => {
     }
 });
 
-// API - Classement
 app.get('/api/leaderboard', async (req, res) => {
     try {
         const { data: users } = await supabase
