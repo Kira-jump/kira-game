@@ -5,183 +5,395 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Kira Game</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&display=swap" rel="stylesheet">
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
+
         body {
-            background: #1a1a2e;
+            background: #0d0d1a;
             color: white;
-            font-family: Arial, sans-serif;
+            font-family: 'Nunito', Arial, sans-serif;
             min-height: 100vh;
             user-select: none;
+            overflow-x: hidden;
         }
+
+        /* BG ANIMATED */
+        .bg-glow {
+            position: fixed;
+            width: 300px;
+            height: 300px;
+            border-radius: 50%;
+            filter: blur(80px);
+            opacity: 0.15;
+            pointer-events: none;
+            z-index: 0;
+        }
+        .bg-glow-1 { background: #f0c040; top: -100px; left: -100px; animation: glow1 8s infinite alternate; }
+        .bg-glow-2 { background: #e07b00; bottom: -100px; right: -100px; animation: glow2 10s infinite alternate; }
+        @keyframes glow1 { 0% { transform: translate(0,0); } 100% { transform: translate(50px,50px); } }
+        @keyframes glow2 { 0% { transform: translate(0,0); } 100% { transform: translate(-50px,-50px); } }
+
+        /* NAV */
         .nav {
             display: flex;
             justify-content: space-around;
-            background: #16213e;
-            padding: 10px 0;
+            background: rgba(22,33,62,0.95);
+            backdrop-filter: blur(20px);
+            padding: 12px 0 16px;
             position: fixed;
             bottom: 0;
             width: 100%;
             z-index: 100;
+            border-top: 1px solid rgba(240,192,64,0.1);
         }
         .nav-btn {
             background: none;
             border: none;
-            color: #aaa;
-            font-size: 11px;
+            color: #555;
+            font-size: 10px;
+            font-family: 'Nunito', sans-serif;
+            font-weight: 700;
             display: flex;
             flex-direction: column;
             align-items: center;
-            gap: 3px;
+            gap: 4px;
             cursor: pointer;
+            transition: all 0.3s;
+            padding: 0 15px;
         }
         .nav-btn.active { color: #f0c040; }
-        .nav-btn span { font-size: 22px; }
-        .page { display: none; padding: 20px; padding-bottom: 80px; }
-        .page.active { display: block; }
+        .nav-btn .nav-icon {
+            font-size: 24px;
+            transition: transform 0.3s;
+        }
+        .nav-btn.active .nav-icon { transform: scale(1.2); }
+
+        /* PAGES */
+        .page { display: none; padding: 20px; padding-bottom: 90px; position: relative; z-index: 1; }
+        .page.active { display: block; animation: fadeIn 0.3s ease; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* HOME */
         .home {
             display: flex;
             flex-direction: column;
             align-items: center;
-            padding-top: 30px;
+            padding-top: 20px;
         }
-        .username { font-size: 18px; color: #aaa; margin-bottom: 5px; }
-        .coins {
-            font-size: 52px;
-            font-weight: bold;
-            color: #f0c040;
-            margin-bottom: 5px;
-            transition: transform 0.1s;
-        }
-        .per-hour { font-size: 14px; color: #aaa; margin-bottom: 30px; }
-        .tap-btn {
-            width: 220px;
-            height: 220px;
-            border-radius: 50%;
-            background: radial-gradient(circle, #f0c040, #e07b00);
-            border: none;
-            font-size: 90px;
-            cursor: pointer;
-            box-shadow: 0 0 40px rgba(240,192,64,0.5);
-            transition: transform 0.1s;
-        }
-        .tap-btn:active { transform: scale(0.92); }
-        .tap-info { margin-top: 15px; font-size: 14px; color: #aaa; }
-        .cards-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 15px;
-            margin-top: 10px;
-        }
-        .card {
-            background: #16213e;
-            border-radius: 15px;
-            padding: 15px;
-            text-align: center;
-            cursor: pointer;
-            border: 2px solid transparent;
-            transition: border 0.2s;
-        }
-        .card:active { border-color: #f0c040; }
-        .card-icon { font-size: 36px; }
-        .card-name { font-size: 14px; font-weight: bold; margin: 5px 0; }
-        .card-level { font-size: 12px; color: #aaa; }
-        .card-income { font-size: 12px; color: #4caf50; margin: 3px 0; }
-        .card-cost { font-size: 13px; color: #f0c040; margin-top: 8px; font-weight: bold; }
-        .leader-item {
+
+        .player-info {
             display: flex;
             align-items: center;
-            background: #16213e;
-            border-radius: 12px;
-            padding: 12px 15px;
-            margin-bottom: 10px;
-            gap: 15px;
-        }
-        .leader-rank { font-size: 20px; width: 30px; }
-        .leader-name { flex: 1; font-size: 15px; }
-        .leader-coins { font-size: 14px; color: #f0c040; font-weight: bold; }
-        .ref-box {
-            background: #16213e;
-            border-radius: 15px;
-            padding: 20px;
-            text-align: center;
+            gap: 10px;
+            background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 20px;
+            padding: 8px 20px;
             margin-bottom: 20px;
         }
-        .ref-box h3 { font-size: 18px; margin-bottom: 10px; }
-        .ref-box p { color: #aaa; font-size: 14px; margin-bottom: 15px; }
-        .ref-link {
-            background: #0f3460;
-            border-radius: 10px;
-            padding: 10px;
-            font-size: 12px;
-            color: #f0c040;
-            word-break: break-all;
-            margin-bottom: 15px;
+        .player-avatar {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #f0c040, #e07b00);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
         }
-        .copy-btn {
-            background: #f0c040;
-            color: #1a1a2e;
-            border: none;
-            border-radius: 10px;
-            padding: 12px 30px;
-            font-size: 15px;
-            font-weight: bold;
-            cursor: pointer;
-            width: 100%;
-        }
-        .ref-stats {
-            background: #16213e;
-            border-radius: 15px;
-            padding: 20px;
+        .player-name { font-size: 15px; font-weight: 800; }
+
+        .coins-container {
             text-align: center;
+            margin-bottom: 5px;
         }
-        .ref-stats h3 { font-size: 18px; margin-bottom: 10px; }
-        .ref-count { font-size: 48px; font-weight: bold; color: #f0c040; }
+        .coins-label { font-size: 13px; color: #888; margin-bottom: 5px; }
+        .coins {
+            font-size: 58px;
+            font-weight: 900;
+            background: linear-gradient(135deg, #f0c040, #ff9500);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            transition: transform 0.1s;
+            line-height: 1;
+        }
+
+        .stats-row {
+            display: flex;
+            gap: 15px;
+            margin: 15px 0 25px;
+        }
+        .stat-box {
+            background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(240,192,64,0.2);
+            border-radius: 15px;
+            padding: 8px 15px;
+            text-align: center;
+            font-size: 12px;
+            color: #aaa;
+        }
+        .stat-box strong { display: block; color: #f0c040; font-size: 14px; font-weight: 800; }
+
+        /* TAP BUTTON */
+        .tap-container {
+            position: relative;
+            margin-bottom: 20px;
+        }
+        .tap-ring {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 260px;
+            height: 260px;
+            border-radius: 50%;
+            border: 2px solid rgba(240,192,64,0.3);
+            animation: ringPulse 2s infinite;
+        }
+        .tap-ring-2 {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 290px;
+            height: 290px;
+            border-radius: 50%;
+            border: 1px solid rgba(240,192,64,0.15);
+            animation: ringPulse 2s infinite 0.5s;
+        }
+        @keyframes ringPulse {
+            0% { transform: translate(-50%, -50%) scale(1); opacity: 1; }
+            100% { transform: translate(-50%, -50%) scale(1.1); opacity: 0; }
+        }
+        .tap-btn {
+            width: 230px;
+            height: 230px;
+            border-radius: 50%;
+            background: radial-gradient(circle at 35% 35%, #ffe066, #f0c040 40%, #e07b00 80%, #b35900);
+            border: none;
+            font-size: 95px;
+            cursor: pointer;
+            box-shadow: 0 0 60px rgba(240,192,64,0.4), 0 20px 40px rgba(0,0,0,0.5), inset 0 -5px 15px rgba(0,0,0,0.3);
+            transition: transform 0.1s, box-shadow 0.1s;
+            position: relative;
+            z-index: 1;
+        }
+        .tap-btn:active {
+            transform: scale(0.92);
+            box-shadow: 0 0 30px rgba(240,192,64,0.2), 0 10px 20px rgba(0,0,0,0.5);
+        }
+        .tap-info { font-size: 13px; color: #666; margin-top: 5px; }
+
+        /* FLOAT TAP */
         .float-tap {
             position: fixed;
-            font-size: 20px;
-            font-weight: bold;
+            font-size: 22px;
+            font-weight: 900;
             color: #f0c040;
+            text-shadow: 0 2px 10px rgba(240,192,64,0.5);
             pointer-events: none;
-            animation: floatUp 1s ease forwards;
+            animation: floatUp 0.8s ease forwards;
             z-index: 999;
         }
         @keyframes floatUp {
-            0% { opacity: 1; transform: translateY(0); }
-            100% { opacity: 0; transform: translateY(-80px); }
+            0% { opacity: 1; transform: translateY(0) scale(1); }
+            100% { opacity: 0; transform: translateY(-80px) scale(1.3); }
         }
-        h2 { font-size: 20px; margin-bottom: 15px; color: #f0c040; }
+
+        /* CARDS */
+        h2 {
+            font-size: 22px;
+            font-weight: 900;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .cards-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+        }
+        .card {
+            background: linear-gradient(135deg, rgba(22,33,62,0.9), rgba(15,25,50,0.9));
+            border: 1px solid rgba(255,255,255,0.08);
+            border-radius: 18px;
+            padding: 15px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.2s;
+            position: relative;
+            overflow: hidden;
+        }
+        .card::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0;
+            height: 2px;
+            background: linear-gradient(90deg, transparent, #f0c040, transparent);
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+        .card:active { transform: scale(0.95); border-color: rgba(240,192,64,0.4); }
+        .card:active::before { opacity: 1; }
+        .card-icon { font-size: 38px; margin-bottom: 5px; }
+        .card-name { font-size: 13px; font-weight: 800; margin-bottom: 3px; }
+        .card-level {
+            font-size: 11px;
+            color: #888;
+            background: rgba(255,255,255,0.05);
+            border-radius: 10px;
+            padding: 2px 8px;
+            display: inline-block;
+            margin-bottom: 5px;
+        }
+        .card-income { font-size: 12px; color: #4caf50; font-weight: 700; margin: 3px 0; }
+        .card-cost {
+            font-size: 13px;
+            color: #f0c040;
+            font-weight: 800;
+            margin-top: 8px;
+            background: rgba(240,192,64,0.1);
+            border-radius: 10px;
+            padding: 4px 8px;
+        }
+
+        /* LEADERBOARD */
+        .leader-item {
+            display: flex;
+            align-items: center;
+            background: rgba(22,33,62,0.8);
+            border: 1px solid rgba(255,255,255,0.05);
+            border-radius: 15px;
+            padding: 14px 15px;
+            margin-bottom: 10px;
+            gap: 12px;
+            transition: transform 0.2s;
+        }
+        .leader-item:first-child { border-color: rgba(240,192,64,0.3); background: rgba(240,192,64,0.05); }
+        .leader-rank { font-size: 22px; width: 35px; text-align: center; }
+        .leader-avatar {
+            width: 38px;
+            height: 38px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #f0c040, #e07b00);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+            flex-shrink: 0;
+        }
+        .leader-name { flex: 1; font-size: 14px; font-weight: 700; }
+        .leader-coins { font-size: 14px; color: #f0c040; font-weight: 800; }
+
+        /* REFERRAL */
+        .ref-box {
+            background: linear-gradient(135deg, rgba(240,192,64,0.1), rgba(224,123,0,0.05));
+            border: 1px solid rgba(240,192,64,0.2);
+            border-radius: 20px;
+            padding: 25px 20px;
+            text-align: center;
+            margin-bottom: 15px;
+        }
+        .ref-box h3 { font-size: 20px; font-weight: 900; margin-bottom: 8px; }
+        .ref-box p { color: #aaa; font-size: 14px; margin-bottom: 15px; line-height: 1.5; }
+        .ref-link {
+            background: rgba(0,0,0,0.3);
+            border: 1px solid rgba(240,192,64,0.2);
+            border-radius: 12px;
+            padding: 12px;
+            font-size: 11px;
+            color: #f0c040;
+            word-break: break-all;
+            margin-bottom: 15px;
+            text-align: left;
+        }
+        .copy-btn {
+            background: linear-gradient(135deg, #f0c040, #e07b00);
+            color: #1a1a2e;
+            border: none;
+            border-radius: 15px;
+            padding: 14px 30px;
+            font-size: 15px;
+            font-weight: 900;
+            cursor: pointer;
+            width: 100%;
+            font-family: 'Nunito', sans-serif;
+            transition: transform 0.2s;
+        }
+        .copy-btn:active { transform: scale(0.97); }
+        .ref-stats {
+            background: rgba(22,33,62,0.8);
+            border: 1px solid rgba(255,255,255,0.05);
+            border-radius: 20px;
+            padding: 25px 20px;
+            text-align: center;
+        }
+        .ref-stats h3 { font-size: 16px; color: #aaa; margin-bottom: 10px; font-weight: 700; }
+        .ref-count { font-size: 52px; font-weight: 900; color: #f0c040; }
     </style>
 </head>
 <body>
 
+<div class="bg-glow bg-glow-1"></div>
+<div class="bg-glow bg-glow-2"></div>
+
+<!-- HOME -->
 <div class="page active" id="page-home">
     <div class="home">
-        <div class="username" id="username">Joueur</div>
-        <div class="coins" id="coins">0</div>
-        <div class="per-hour" id="per-hour">⚡ 0 coins/heure</div>
-        <button class="tap-btn" id="tap-btn">👊</button>
-        <div class="tap-info">+<span id="tap-value">1</span> par tap</div>
+        <div class="player-info">
+            <div class="player-avatar">👤</div>
+            <div class="player-name" id="username">Joueur</div>
+        </div>
+
+        <div class="coins-container">
+            <div class="coins-label">💰 Tes coins</div>
+            <div class="coins" id="coins">0</div>
+        </div>
+
+        <div class="stats-row">
+            <div class="stat-box">
+                <strong id="per-hour-val">0</strong>
+                coins/heure
+            </div>
+            <div class="stat-box">
+                <strong id="tap-value">1</strong>
+                par tap
+            </div>
+        </div>
+
+        <div class="tap-container">
+            <div class="tap-ring"></div>
+            <div class="tap-ring-2"></div>
+            <button class="tap-btn" id="tap-btn">👊</button>
+        </div>
+
+        <div class="tap-info">Tape pour gagner des coins !</div>
     </div>
 </div>
 
+<!-- CARDS -->
 <div class="page" id="page-cards">
     <h2>🃏 Cartes</h2>
     <div class="cards-grid" id="cards-grid"></div>
 </div>
 
+<!-- LEADERBOARD -->
 <div class="page" id="page-leaderboard">
     <h2>🏆 Classement</h2>
     <div id="leaderboard-list"></div>
 </div>
 
+<!-- REFERRAL -->
 <div class="page" id="page-referral">
     <h2>👥 Parrainage</h2>
     <div class="ref-box">
-        <h3>Invite tes amis !</h3>
-        <p>Tu gagnes <strong>500 coins</strong> par ami invité 🎉</p>
+        <h3>🎁 Invite tes amis !</h3>
+        <p>Gagne <strong style="color:#f0c040">500 coins</strong> pour chaque ami qui rejoint Kira Game !</p>
         <div class="ref-link" id="ref-link">Chargement...</div>
-        <button class="copy-btn" id="copy-btn">📋 Copier le lien</button>
+        <button class="copy-btn" id="copy-btn">📋 Copier mon lien</button>
     </div>
     <div class="ref-stats">
         <h3>Amis invités</h3>
@@ -189,18 +401,19 @@
     </div>
 </div>
 
+<!-- NAV -->
 <nav class="nav">
     <button class="nav-btn active" onclick="showPage('home', this)">
-        <span>🎮</span>Jouer
+        <span class="nav-icon">🎮</span>Jouer
     </button>
     <button class="nav-btn" onclick="showPage('cards', this)">
-        <span>🃏</span>Cartes
+        <span class="nav-icon">🃏</span>Cartes
     </button>
     <button class="nav-btn" onclick="showPage('leaderboard', this)">
-        <span>🏆</span>Top
+        <span class="nav-icon">🏆</span>Top
     </button>
     <button class="nav-btn" onclick="showPage('referral', this)">
-        <span>👥</span>Amis
+        <span class="nav-icon">👥</span>Amis
     </button>
 </nav>
 
@@ -238,15 +451,15 @@ function showPage(name, btn) {
 
 function formatNumber(n) {
     n = Math.floor(n || 0);
-    if (n >= 1000000) return (n / 1000000).toFixed(1) + 'M';
-    if (n >= 1000) return (n / 1000).toFixed(1) + 'K';
+    if (n >= 1000000) return (n/1000000).toFixed(1) + 'M';
+    if (n >= 1000) return (n/1000).toFixed(1) + 'K';
     return n.toString();
 }
 
 function updateUI() {
-    document.getElementById('username').textContent = '👤 ' + telegramUsername;
+    document.getElementById('username').textContent = telegramUsername;
     document.getElementById('coins').textContent = formatNumber(coins);
-    document.getElementById('per-hour').textContent = '⚡ ' + formatNumber(coinsPerHour) + ' coins/heure';
+    document.getElementById('per-hour-val').textContent = formatNumber(coinsPerHour);
     document.getElementById('tap-value').textContent = coinsPerTap;
     document.getElementById('ref-count').textContent = referrals;
     document.getElementById('ref-link').textContent = 'https://t.me/KiraGameBot?start=' + telegramId;
@@ -268,9 +481,7 @@ async function loadUser() {
             cards = user.cards || [];
             referrals = parseInt(user.referrals) || 0;
         }
-    } catch(e) {
-        console.log('Erreur loadUser:', e);
-    }
+    } catch(e) { console.log('Erreur:', e); }
     updateUI();
 }
 
@@ -286,18 +497,21 @@ async function saveCoins() {
 
 document.getElementById('tap-btn').addEventListener('click', (e) => {
     coins += coinsPerTap;
-    document.getElementById('coins').textContent = formatNumber(coins);
+    const el = document.getElementById('coins');
+    el.textContent = formatNumber(coins);
+    el.style.transform = 'scale(1.15)';
+    setTimeout(() => el.style.transform = 'scale(1)', 100);
 
     const float = document.createElement('div');
     float.className = 'float-tap';
     float.textContent = '+' + coinsPerTap;
-    float.style.left = (e.clientX - 20) + 'px';
-    float.style.top = (e.clientY - 20) + 'px';
+    float.style.left = (e.clientX - 15) + 'px';
+    float.style.top = (e.clientY - 30) + 'px';
     document.body.appendChild(float);
-    setTimeout(() => float.remove(), 1000);
+    setTimeout(() => float.remove(), 800);
 
     clearTimeout(saveTimeout);
-    saveTimeout = setTimeout(saveCoins, 2000);
+    saveTimeout = setTimeout(saveCoins, 1500);
 });
 
 function renderCards() {
@@ -308,13 +522,15 @@ function renderCards() {
         const level = userCard ? parseInt(userCard.level) : 0;
         const cost = Math.floor(card.baseCost * Math.pow(1.5, level));
         const income = card.baseIncome * (level + 1);
+        const canAfford = coins >= cost;
 
         const div = document.createElement('div');
         div.className = 'card';
+        div.style.opacity = canAfford ? '1' : '0.6';
         div.innerHTML = `
             <div class="card-icon">${card.icon}</div>
             <div class="card-name">${card.name}</div>
-            <div class="card-level">Niveau ${level}</div>
+            <div class="card-level">Niv. ${level}</div>
             <div class="card-income">+${formatNumber(income)}/h</div>
             <div class="card-cost">💰 ${formatNumber(cost)}</div>
         `;
@@ -324,10 +540,7 @@ function renderCards() {
 }
 
 async function buyCard(cardId, cost, baseIncome) {
-    if (coins < cost) {
-        alert('Pas assez de coins !');
-        return;
-    }
+    if (coins < cost) { alert('Pas assez de coins !'); return; }
     try {
         const res = await fetch(API + '/api/user/' + telegramId + '/buy-card', {
             method: 'POST',
@@ -342,20 +555,18 @@ async function buyCard(cardId, cost, baseIncome) {
             cards = user.cards || [];
             updateUI();
         }
-    } catch(e) {
-        alert('Erreur achat !');
-    }
+    } catch(e) { alert('Erreur achat !'); }
 }
 
 async function loadLeaderboard() {
     try {
         const res = await fetch(API + '/api/leaderboard');
         const users = await res.json();
-        const list = document.getElementById('leaderboard-list');
         const medals = ['🥇', '🥈', '🥉'];
-        list.innerHTML = users.map((u, i) => `
+        document.getElementById('leaderboard-list').innerHTML = users.map((u, i) => `
             <div class="leader-item">
-                <div class="leader-rank">${medals[i] || (i + 1)}</div>
+                <div class="leader-rank">${medals[i] || (i+1)}</div>
+                <div class="leader-avatar">👤</div>
                 <div class="leader-name">${u.username}</div>
                 <div class="leader-coins">💰 ${formatNumber(u.coins)}</div>
             </div>
@@ -364,8 +575,8 @@ async function loadLeaderboard() {
 }
 
 document.getElementById('copy-btn').addEventListener('click', () => {
-    const link = 'https://t.me/KiraGameBot?start=' + telegramId;
-    navigator.clipboard.writeText(link).then(() => alert('Lien copié ! 🎉'));
+    navigator.clipboard.writeText('https://t.me/KiraGameBot?start=' + telegramId)
+        .then(() => alert('Lien copié ! 🎉'));
 });
 
 setInterval(() => {
