@@ -600,7 +600,7 @@
         ✅ Wallet connecté !<br><span id="wallet-address" style="font-size:11px;color:#aaa;"></span>
     </div>
     <div class="coins-container">
-            <div class="coins-label">💰 Tes coins</div>
+            <div class="coins-label" data-i18n="your_coins">💰 Tes coins</div>
             <div class="coins" id="coins">0</div>
         </div>
 
@@ -621,7 +621,7 @@
             <button class="tap-btn" id="tap-btn">👊</button>
         </div>
 
-        <div class="tap-info">Tape pour gagner des coins !</div>
+        <div class="tap-info"><span data-i18n="tap_info">Tape pour gagner des coins !</span></div>
     <div class="boost-active-bar" id="boost-active-bar">⚡ BOOST ACTIF ! x<span id="boost-multiplier">1</span> — <span id="boost-countdown">30</span>s</div>
     <div class="boost-container" id="boost-container"></div>
     </div>
@@ -1136,6 +1136,34 @@ function toggleLang() {
 }
 
 function applyTranslations() {
+    const l = lang;
+    // Méthode simple - remplace directement les textes
+    document.querySelectorAll('[data-i18n]').forEach(el => {
+        const key = el.getAttribute('data-i18n');
+        if (l[key]) el.innerHTML = l[key];
+    });
+    // Bouton langue
+    document.getElementById('lang-btn').textContent = userLang === 'fr' ? '🇫🇷 FR' : '🇬🇧 EN';
+    // Nav
+    const navLabels = document.querySelectorAll('.nav-btn');
+    const keys = ['nav_play','nav_cards','nav_missions','nav_wheel','nav_top','nav_friends'];
+    navLabels.forEach((btn, i) => {
+        if(keys[i]) {
+            const icon = btn.querySelector('.nav-icon');
+            if(icon) btn.innerHTML = icon.outerHTML + l[keys[i]];
+        }
+    });
+    // Wallet btn
+    const wb = document.getElementById('wallet-btn');
+    if(wb) wb.innerHTML = l.connect_wallet;
+    // Stats boxes
+    const boxes = document.querySelectorAll('.stat-box');
+    if(boxes[0]) boxes[0].innerHTML = '<strong id="per-hour-val">' + formatNumber(coinsPerHour) + '</strong>' + l.coins_hour;
+    if(boxes[1]) boxes[1].innerHTML = '<strong id="tap-value">' + coinsPerTap + '</strong>' + l.per_tap;
+    // Spin btn
+    updateWheelStatus();
+}
+function applyTranslations_old() {
     document.querySelector('.coins-label').textContent = lang.your_coins;
     document.querySelector('.tap-info').textContent = lang.tap_info;
     document.getElementById('page-cards').querySelector('h2').textContent = lang.cards_title;
@@ -1165,7 +1193,7 @@ function applyTranslations() {
     if (userLang === 'ar') {
         document.body.style.direction = 'rtl';
     }
-}
+}}
 
 const LEVELS = [
     { name: 'Bronze', icon: '🥉', min: 0, tapBonus: 1 },
