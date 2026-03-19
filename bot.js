@@ -302,3 +302,62 @@ app.get('/api/wheel/:telegramId/status', async (req, res) => {
         res.json({ freeSpinUsed: spins && spins.length > 0, spinsToday: spins?.length || 0 });
     } catch (err) { res.status(500).json({ error: err.message }); }
 });
+
+// ADMIN PASSWORD
+const ADMIN_PASSWORD = 'kira2024admin';
+
+// ADMIN STATS
+app.get('/api/admin/stats', async (req, res) => {
+    try {
+        const { data: users } = await supabase.from('users').select('*').order('coins', { ascending: false });
+        const today = new Date().toISOString().split('T')[0];
+        const { data: spins } = await supabase.from('wheel_spins').select('*').eq('spun_date', today);
+        const totalCoins = users?.reduce((s, u) => s + (u.coins || 0), 0) || 0;
+        const walletsConnected = users?.filter(u => u.wallet_address).length || 0;
+        res.json({
+            totalUsers: users?.length || 0,
+            totalCoins,
+            spinsToday: spins?.length || 0,
+            walletsConnected,
+            users: users || []
+        });
+    } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+// ADMIN NOTIFY ALL
+app.post('/api/admin/notify-all', async (req, res) => {
+    try {
+        const { message, password } = req.body;
+        if (password !== ADMIN_PASSWORD) return res.status(401).json({ error: 'Non autorisé' });
+        const { data: users } = await supabase.from('users').select('telegram_id');
+        let sent = 0;
+        for (const user of users || []) {
+            try {
+                await bot.sendMessage(user.telegram_id, message, {
+                    reply_markup: { inline_keyboard: [[{ text: '🎮 Jouer', web_app: { url: process.env.APP_URL } }]] }
+                });
+                sent++;
+                await new Promise(r => setTimeout(r, 100));
+            } catch(e) {}
+        }
+        res.json({ success: true, sent });
+    } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+// ADMIN GIVE COINS
+app.post('/api/admin/give-coins', async (req, res) => {
+    try {
+        const { telegramId, amount, password } = req.body;
+        if (password !== ADMIN_PASSWORD) return res.status(401).json({ error: 'Non autorisé' });
+        const { data: user } = await supabase.from('users').select('*').eq('telegram_id', telegramId).single();
+        if (!user) return res.status(404).json({ error: 'Joueur non trouvé' });
+        const { data: updated } = await supabase.from('users').update({
+            coins: user.coins + amount,
+            total_coins: (user.total_coins || 0) + amount
+        }).eq('telegram_id', telegramId).select().single();
+        await bot.sendMessage(telegramId, `🎁 L'admin t'a offert ${amount} coins ! Merci de jouer à Kira Game ! 🎮`, {
+            reply_markup: { inline_keyboard: [[{ text: '🎮 Jouer', web_app: { url: process.env.APP_URL } }]] }
+        });
+        res.json(updated);
+    } catch (err) { res.status(500).json({ error: err.message }); }
+});

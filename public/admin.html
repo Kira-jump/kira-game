@@ -1,0 +1,361 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kira Game - Admin</title>
+    <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            background: #0d0d1a;
+            color: white;
+            font-family: 'Nunito', sans-serif;
+            min-height: 100vh;
+        }
+        .header {
+            background: linear-gradient(135deg, rgba(240,192,64,0.2), rgba(224,123,0,0.1));
+            border-bottom: 1px solid rgba(240,192,64,0.3);
+            padding: 20px 30px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .header h1 { font-size: 24px; font-weight: 900; color: #f0c040; }
+        .header p { font-size: 13px; color: #888; }
+        .logout-btn {
+            background: rgba(255,0,0,0.2);
+            border: 1px solid rgba(255,0,0,0.3);
+            color: #ff6666;
+            border-radius: 10px;
+            padding: 8px 15px;
+            cursor: pointer;
+            font-family: 'Nunito', sans-serif;
+            font-weight: 700;
+        }
+        .container { padding: 30px; max-width: 1200px; margin: 0 auto; }
+
+        /* LOGIN */
+        .login-box {
+            max-width: 400px;
+            margin: 100px auto;
+            background: rgba(22,33,62,0.9);
+            border: 1px solid rgba(240,192,64,0.2);
+            border-radius: 20px;
+            padding: 40px;
+            text-align: center;
+        }
+        .login-box h2 { font-size: 24px; color: #f0c040; margin-bottom: 20px; }
+        .login-input {
+            width: 100%;
+            background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 12px;
+            padding: 12px 15px;
+            color: white;
+            font-size: 16px;
+            font-family: 'Nunito', sans-serif;
+            margin-bottom: 15px;
+        }
+        .login-btn {
+            width: 100%;
+            background: linear-gradient(135deg, #f0c040, #e07b00);
+            color: #1a1a2e;
+            border: none;
+            border-radius: 12px;
+            padding: 14px;
+            font-size: 16px;
+            font-weight: 900;
+            cursor: pointer;
+            font-family: 'Nunito', sans-serif;
+        }
+
+        /* STATS */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        .stat-card {
+            background: rgba(22,33,62,0.9);
+            border: 1px solid rgba(255,255,255,0.08);
+            border-radius: 18px;
+            padding: 20px;
+            text-align: center;
+        }
+        .stat-card .stat-icon { font-size: 36px; margin-bottom: 10px; }
+        .stat-card .stat-value { font-size: 32px; font-weight: 900; color: #f0c040; }
+        .stat-card .stat-label { font-size: 13px; color: #888; margin-top: 5px; }
+
+        /* SECTIONS */
+        .section {
+            background: rgba(22,33,62,0.9);
+            border: 1px solid rgba(255,255,255,0.08);
+            border-radius: 18px;
+            padding: 25px;
+            margin-bottom: 25px;
+        }
+        .section h2 { font-size: 18px; font-weight: 900; color: #f0c040; margin-bottom: 20px; }
+
+        /* TABLE */
+        .table-wrapper { overflow-x: auto; }
+        table { width: 100%; border-collapse: collapse; }
+        th { text-align: left; padding: 10px 15px; font-size: 12px; color: #888; border-bottom: 1px solid rgba(255,255,255,0.05); }
+        td { padding: 12px 15px; font-size: 13px; border-bottom: 1px solid rgba(255,255,255,0.03); }
+        tr:hover td { background: rgba(255,255,255,0.02); }
+        .level-badge-sm {
+            background: rgba(240,192,64,0.15);
+            border-radius: 8px;
+            padding: 3px 8px;
+            font-size: 11px;
+            font-weight: 700;
+            color: #f0c040;
+        }
+
+        /* ACTIONS */
+        .actions-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+        .action-box { background: rgba(15,25,50,0.9); border-radius: 15px; padding: 20px; }
+        .action-box h3 { font-size: 15px; font-weight: 800; margin-bottom: 15px; }
+        .action-input {
+            width: 100%;
+            background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 10px;
+            padding: 10px 12px;
+            color: white;
+            font-size: 13px;
+            font-family: 'Nunito', sans-serif;
+            margin-bottom: 10px;
+        }
+        .action-btn {
+            width: 100%;
+            background: linear-gradient(135deg, #f0c040, #e07b00);
+            color: #1a1a2e;
+            border: none;
+            border-radius: 10px;
+            padding: 10px;
+            font-size: 14px;
+            font-weight: 900;
+            cursor: pointer;
+            font-family: 'Nunito', sans-serif;
+        }
+        .action-btn.danger {
+            background: linear-gradient(135deg, #ff4444, #cc0000);
+            color: white;
+        }
+        .action-btn.blue {
+            background: linear-gradient(135deg, #0088cc, #0055aa);
+            color: white;
+        }
+        textarea.action-input { height: 80px; resize: none; }
+        .success-msg { color: #00cc88; font-size: 13px; margin-top: 8px; display: none; }
+        .refresh-btn {
+            background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(255,255,255,0.1);
+            color: #888;
+            border-radius: 10px;
+            padding: 8px 15px;
+            cursor: pointer;
+            font-family: 'Nunito', sans-serif;
+            font-size: 13px;
+            margin-left: 10px;
+        }
+    </style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div id="login-screen">
+    <div class="login-box">
+        <div style="font-size:50px;margin-bottom:15px">🎮</div>
+        <h2>Admin Dashboard</h2>
+        <p style="color:#888;margin-bottom:25px;font-size:14px">Kira Game Administration</p>
+        <input type="password" class="login-input" id="admin-password" placeholder="Mot de passe admin" onkeypress="if(event.key==='Enter')login()">
+        <button class="login-btn" onclick="login()">🔐 Connexion</button>
+        <p style="color:#ff6666;font-size:13px;margin-top:10px;display:none" id="login-error">Mot de passe incorrect !</p>
+    </div>
+</div>
+
+<!-- DASHBOARD -->
+<div id="dashboard" style="display:none">
+    <div class="header">
+        <div>
+            <h1>🎮 Kira Game Admin</h1>
+            <p id="last-update">Chargement...</p>
+        </div>
+        <button class="logout-btn" onclick="logout()">🚪 Déconnexion</button>
+    </div>
+
+    <div class="container">
+        <!-- STATS -->
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-icon">👥</div>
+                <div class="stat-value" id="stat-users">-</div>
+                <div class="stat-label">Joueurs total</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon">💰</div>
+                <div class="stat-value" id="stat-coins">-</div>
+                <div class="stat-label">Coins en circulation</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon">🎰</div>
+                <div class="stat-value" id="stat-spins">-</div>
+                <div class="stat-label">Tours de roue aujourd'hui</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon">💎</div>
+                <div class="stat-value" id="stat-wallets">-</div>
+                <div class="stat-label">Wallets connectés</div>
+            </div>
+        </div>
+
+        <!-- ACTIONS -->
+        <div class="section">
+            <h2>⚡ Actions</h2>
+            <div class="actions-grid">
+                <div class="action-box">
+                    <h3>📢 Notifier tous les joueurs</h3>
+                    <textarea class="action-input" id="notif-message" placeholder="Message à envoyer..."></textarea>
+                    <button class="action-btn blue" onclick="notifyAll()">📢 Envoyer à tous</button>
+                    <p class="success-msg" id="notif-success">✅ Notifications envoyées !</p>
+                </div>
+                <div class="action-box">
+                    <h3>🎁 Donner des coins</h3>
+                    <input type="text" class="action-input" id="give-telegram-id" placeholder="Telegram ID du joueur">
+                    <input type="number" class="action-input" id="give-coins" placeholder="Nombre de coins">
+                    <button class="action-btn" onclick="giveCoins()">🎁 Donner les coins</button>
+                    <p class="success-msg" id="give-success">✅ Coins donnés !</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- PLAYERS TABLE -->
+        <div class="section">
+            <h2>
+                👥 Joueurs
+                <button class="refresh-btn" onclick="loadDashboard()">🔄 Actualiser</button>
+            </h2>
+            <div class="table-wrapper">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>Joueur</th>
+                            <th>Telegram ID</th>
+                            <th>Coins</th>
+                            <th>Niveau</th>
+                            <th>Coins/h</th>
+                            <th>Wallet</th>
+                            <th>Parrainages</th>
+                        </tr>
+                    </thead>
+                    <tbody id="players-table"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+const API = 'https://kira-game-production.up.railway.app';
+const ADMIN_PASSWORD = 'kira2024admin';
+
+function login() {
+    const pwd = document.getElementById('admin-password').value;
+    if (pwd === ADMIN_PASSWORD) {
+        document.getElementById('login-screen').style.display = 'none';
+        document.getElementById('dashboard').style.display = 'block';
+        loadDashboard();
+    } else {
+        document.getElementById('login-error').style.display = 'block';
+    }
+}
+
+function logout() {
+    document.getElementById('login-screen').style.display = 'block';
+    document.getElementById('dashboard').style.display = 'none';
+    document.getElementById('admin-password').value = '';
+}
+
+function formatNumber(n) {
+    n = Math.floor(n || 0);
+    if (n >= 1000000) return (n/1000000).toFixed(1) + 'M';
+    if (n >= 1000) return (n/1000).toFixed(1) + 'K';
+    return n.toString();
+}
+
+async function loadDashboard() {
+    try {
+        const res = await fetch(API + '/api/admin/stats');
+        if (!res.ok) return;
+        const data = await res.json();
+
+        document.getElementById('stat-users').textContent = data.totalUsers || 0;
+        document.getElementById('stat-coins').textContent = formatNumber(data.totalCoins || 0);
+        document.getElementById('stat-spins').textContent = data.spinsToday || 0;
+        document.getElementById('stat-wallets').textContent = data.walletsConnected || 0;
+        document.getElementById('last-update').textContent = 'Dernière mise à jour: ' + new Date().toLocaleTimeString();
+
+        const tbody = document.getElementById('players-table');
+        tbody.innerHTML = (data.users || []).map((u, i) => `
+            <tr>
+                <td style="color:#888">${i+1}</td>
+                <td style="font-weight:800">${u.username}</td>
+                <td style="color:#888;font-size:11px">${u.telegram_id}</td>
+                <td style="color:#f0c040;font-weight:700">💰 ${formatNumber(u.coins)}</td>
+                <td><span class="level-badge-sm">${u.level || 'Bronze'}</span></td>
+                <td style="color:#4caf50">${formatNumber(u.coins_per_hour)}/h</td>
+                <td>${u.wallet_address ? '✅' : '❌'}</td>
+                <td>${u.referrals || 0} 👥</td>
+            </tr>
+        `).join('');
+    } catch(e) {
+        console.log('Error:', e);
+    }
+}
+
+async function notifyAll() {
+    const message = document.getElementById('notif-message').value;
+    if (!message) { alert('Entre un message !'); return; }
+    try {
+        const res = await fetch(API + '/api/admin/notify-all', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ message, password: ADMIN_PASSWORD })
+        });
+        if (res.ok) {
+            document.getElementById('notif-success').style.display = 'block';
+            document.getElementById('notif-message').value = '';
+            setTimeout(() => document.getElementById('notif-success').style.display = 'none', 3000);
+        }
+    } catch(e) { alert('Erreur réseau'); }
+}
+
+async function giveCoins() {
+    const telegramId = document.getElementById('give-telegram-id').value;
+    const amount = parseInt(document.getElementById('give-coins').value);
+    if (!telegramId || !amount) { alert('Remplis tous les champs !'); return; }
+    try {
+        const res = await fetch(API + '/api/admin/give-coins', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ telegramId, amount, password: ADMIN_PASSWORD })
+        });
+        if (res.ok) {
+            document.getElementById('give-success').style.display = 'block';
+            document.getElementById('give-telegram-id').value = '';
+            document.getElementById('give-coins').value = '';
+            setTimeout(() => document.getElementById('give-success').style.display = 'none', 3000);
+            loadDashboard();
+        }
+    } catch(e) { alert('Erreur réseau'); }
+}
+
+// Auto refresh toutes les 30 secondes
+setInterval(loadDashboard, 30000);
+</script>
+</body>
+</html>
