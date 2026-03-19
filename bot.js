@@ -361,3 +361,17 @@ app.post('/api/admin/give-coins', async (req, res) => {
         res.json(updated);
     } catch (err) { res.status(500).json({ error: err.message }); }
 });
+
+// SAVE AVATAR
+app.post('/api/user/:telegramId/avatar', async (req, res) => {
+    try {
+        const { avatar } = req.body;
+        const { data: user } = await supabase
+            .from('users')
+            .update({ avatar })
+            .eq('telegram_id', req.params.telegramId)
+            .select()
+            .single();
+        res.json(user);
+    } catch (err) { res.status(500).json({ error: err.message }); }
+});
