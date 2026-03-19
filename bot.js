@@ -231,3 +231,74 @@ console.log('🤖 Bot démarré...');
 console.log('SUPABASE_URL:', process.env.SUPABASE_URL ? '✅' : '❌');
 console.log('SUPABASE_KEY:', process.env.SUPABASE_KEY ? '✅' : '❌');
 console.log('BOT_TOKEN:', process.env.BOT_TOKEN ? '✅' : '❌');
+
+// WHEEL SPIN
+app.post('/api/wheel/:telegramId/spin', async (req, res) => {
+    try {
+        const today = new Date().toISOString().split('T')[0];
+        const { data: todaySpins } = await supabase
+            .from('wheel_spins')
+            .select('*')
+            .eq('telegram_id', req.params.telegramId)
+            .eq('spun_date', today);
+
+        const freeSpinUsed = todaySpins && todaySpins.length > 0;
+
+        // Si pas de spin gratuit, coûte 1000 coins
+        if (freeSpinUsed) {
+            const { data: user } = await supabase.from('users').select('coins').eq('telegram_id', req.params.telegramId).single();
+            if (!user || user.coins < 1000) return res.status(400).json({ error: 'Pas assez de coins ! (1000 coins)' });
+            await supabase.from('users').update({ coins: user.coins - 1000 }).eq('telegram_id', req.params.telegramId);
+        }
+
+        // Roue avec probabilités
+        const rewards = [
+            { label: '500 🪙', type: 'coins', value: 500, probability: 30 },
+            { label: '1K 🪙', type: 'coins', value: 1000, probability: 25 },
+            { label: '5K 🪙', type: 'coins', value: 5000, probability: 15 },
+            { label: '10K 🪙', type: 'coins', value: 10000, probability: 10 },
+            { label: '⚡ x2', type: 'boost', value: 2, probability: 8 },
+            { label: '🔥 x3', type: 'boost', value: 3, probability: 5 },
+            { label: '🃏 Carte', type: 'card', value: 0, probability: 5 },
+            { label: '💎 50K', type: 'coins', value: 50000, probability: 2 },
+        ];
+
+        // Sélection aléatoire selon probabilités
+        const total = rewards.reduce((s, r) => s + r.probability, 0);
+        let rand = Math.random() * total;
+        let selected = rewards[0];
+        for (const r of rewards) {
+            rand -= r.probability;
+            if (rand <= 0) { selected = r; break; }
+        }
+
+        // Applique la récompense
+        const { data: user } = await supabase.from('users').select('*').eq('telegram_id', req.params.telegramId).single();
+        if (selected.type === 'coins') {
+            await supabase.from('users').update({ coins: user.coins + selected.value }).eq('telegram_id', req.params.telegramId);
+        }
+
+        // Sauvegarde le spin
+        await supabase.from('wheel_spins').insert({
+            telegram_id: req.params.telegramId,
+            reward: selected.label,
+            reward_value: selected.value,
+            spun_date: today
+        });
+
+        res.json({ reward: selected, freeSpinUsed, user });
+    } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+// GET WHEEL STATUS
+app.get('/api/wheel/:telegramId/status', async (req, res) => {
+    try {
+        const today = new Date().toISOString().split('T')[0];
+        const { data: spins } = await supabase
+            .from('wheel_spins')
+            .select('*')
+            .eq('telegram_id', req.params.telegramId)
+            .eq('spun_date', today);
+        res.json({ freeSpinUsed: spins && spins.length > 0, spinsToday: spins?.length || 0 });
+    } catch (err) { res.status(500).json({ error: err.message }); }
+});
