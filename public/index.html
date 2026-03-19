@@ -1118,8 +1118,16 @@ const TRANSLATIONS = {
 };
 
 // Détecte la langue
-const rawLang = tg.initDataUnsafe?.user?.language_code || navigator.language || 'fr';
-const userLang = rawLang.split('-')[0].toLowerCase();
+// Détection langue multiple sources
+let userLang = 'fr';
+try {
+    const tgLang = tg.initDataUnsafe?.user?.language_code;
+    const navLang = navigator.language || navigator.userLanguage;
+    const rawLang = tgLang || navLang || 'fr';
+    userLang = rawLang.split('-')[0].toLowerCase();
+    if (!TRANSLATIONS[userLang]) userLang = 'en';
+    console.log('Langue détectée:', userLang, 'TG:', tgLang, 'Nav:', navLang);
+} catch(e) { userLang = 'en'; }
 const lang = TRANSLATIONS[userLang] || TRANSLATIONS['en'];
 
 // Applique les traductions
