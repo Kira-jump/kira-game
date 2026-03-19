@@ -875,7 +875,7 @@ let walletAddress = null;
 async function initTonConnect() {
     try {
         tonConnectUI = new TON_CONNECT_UI.TonConnectUI({
-            manifestUrl: 'https://kira-game.vercel.app/tonconnect-manifest.json',
+            manifestUrl: 'https://raw.githubusercontent.com/Kira-jump/kira-game/main/public/tonconnect-manifest.json',
         });
         tonConnectUI.onStatusChange(wallet => {
             if (wallet) {
