@@ -14,7 +14,6 @@
             min-height: 100vh;
             user-select: none;
         }
-        /* NAV */
         .nav {
             display: flex;
             justify-content: space-around;
@@ -38,12 +37,8 @@
         }
         .nav-btn.active { color: #f0c040; }
         .nav-btn span { font-size: 22px; }
-
-        /* PAGES */
         .page { display: none; padding: 20px; padding-bottom: 80px; }
         .page.active { display: block; }
-
-        /* HOME */
         .home {
             display: flex;
             flex-direction: column;
@@ -56,6 +51,7 @@
             font-weight: bold;
             color: #f0c040;
             margin-bottom: 5px;
+            transition: transform 0.1s;
         }
         .per-hour { font-size: 14px; color: #aaa; margin-bottom: 30px; }
         .tap-btn {
@@ -68,12 +64,9 @@
             cursor: pointer;
             box-shadow: 0 0 40px rgba(240,192,64,0.5);
             transition: transform 0.1s;
-            position: relative;
         }
         .tap-btn:active { transform: scale(0.92); }
         .tap-info { margin-top: 15px; font-size: 14px; color: #aaa; }
-
-        /* CARDS */
         .cards-grid {
             display: grid;
             grid-template-columns: 1fr 1fr;
@@ -94,14 +87,7 @@
         .card-name { font-size: 14px; font-weight: bold; margin: 5px 0; }
         .card-level { font-size: 12px; color: #aaa; }
         .card-income { font-size: 12px; color: #4caf50; margin: 3px 0; }
-        .card-cost {
-            font-size: 13px;
-            color: #f0c040;
-            margin-top: 8px;
-            font-weight: bold;
-        }
-
-        /* LEADERBOARD */
+        .card-cost { font-size: 13px; color: #f0c040; margin-top: 8px; font-weight: bold; }
         .leader-item {
             display: flex;
             align-items: center;
@@ -114,8 +100,6 @@
         .leader-rank { font-size: 20px; width: 30px; }
         .leader-name { flex: 1; font-size: 15px; }
         .leader-coins { font-size: 14px; color: #f0c040; font-weight: bold; }
-
-        /* REFERRAL */
         .ref-box {
             background: #16213e;
             border-radius: 15px;
@@ -153,8 +137,6 @@
         }
         .ref-stats h3 { font-size: 18px; margin-bottom: 10px; }
         .ref-count { font-size: 48px; font-weight: bold; color: #f0c040; }
-
-        /* FLOATING TAP */
         .float-tap {
             position: fixed;
             font-size: 20px;
@@ -168,13 +150,11 @@
             0% { opacity: 1; transform: translateY(0); }
             100% { opacity: 0; transform: translateY(-80px); }
         }
-
         h2 { font-size: 20px; margin-bottom: 15px; color: #f0c040; }
     </style>
 </head>
 <body>
 
-<!-- PAGE HOME -->
 <div class="page active" id="page-home">
     <div class="home">
         <div class="username" id="username">Joueur</div>
@@ -185,19 +165,16 @@
     </div>
 </div>
 
-<!-- PAGE CARDS -->
 <div class="page" id="page-cards">
     <h2>🃏 Cartes</h2>
     <div class="cards-grid" id="cards-grid"></div>
 </div>
 
-<!-- PAGE LEADERBOARD -->
 <div class="page" id="page-leaderboard">
     <h2>🏆 Classement</h2>
     <div id="leaderboard-list"></div>
 </div>
 
-<!-- PAGE REFERRAL -->
 <div class="page" id="page-referral">
     <h2>👥 Parrainage</h2>
     <div class="ref-box">
@@ -212,7 +189,6 @@
     </div>
 </div>
 
-<!-- NAV -->
 <nav class="nav">
     <button class="nav-btn active" onclick="showPage('home', this)">
         <span>🎮</span>Jouer
@@ -232,11 +208,16 @@
 const tg = window.Telegram.WebApp;
 tg.expand();
 
-const telegramId = tg.initDataUnsafe?.user?.id?.toString() || 'test123';
-const telegramUsername = tg.initDataUnsafe?.user?.username || 'Joueur';
-
 const API = 'https://kira-game-production.up.railway.app';
-let userData = null;
+const telegramId = tg.initDataUnsafe?.user?.id?.toString() || 'test123';
+const telegramUsername = tg.initDataUnsafe?.user?.first_name || tg.initDataUnsafe?.user?.username || 'Joueur';
+
+let coins = 0;
+let coinsPerTap = 1;
+let coinsPerHour = 0;
+let cards = [];
+let referrals = 0;
+let saveTimeout = null;
 
 const CARDS = [
     { id: 'mine', icon: '⛏️', name: 'Mine', baseCost: 100, baseIncome: 10 },
@@ -247,7 +228,6 @@ const CARDS = [
     { id: 'satellite', icon: '🛸', name: 'Satellite', baseCost: 200000, baseIncome: 20000 },
 ];
 
-// Navigation
 function showPage(name, btn) {
     document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
     document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
@@ -256,74 +236,76 @@ function showPage(name, btn) {
     if (name === 'leaderboard') loadLeaderboard();
 }
 
-// Charger les données
-async function loadUser() {
-    try {
-        const res = await fetch(`${API}/api/user/init`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ telegramId, username: telegramUsername }) });
-        if (res.ok) {
-            userData = await res.json();
-        } else {
-            userData = { telegramId, username: telegramUsername, coins: 0, coinsPerTap: 1, coinsPerHour: 0, referrals: 0, cards: [] };
-        }
-        updateUI();
-    } catch {
-        userData = { telegramId, username: telegramUsername, coins: 0, coinsPerTap: 1, coinsPerHour: 0, referrals: 0, cards: [] };
-        updateUI();
-    }
-}
-
-function updateUI() {
-    document.getElementById('username').textContent = '👤 ' + (userData.username || telegramUsername);
-    document.getElementById('coins').textContent = formatNumber(Math.floor(userData.coins));
-    document.getElementById('per-hour').textContent = '⚡ ' + formatNumber(userData.coinsPerHour) + ' coins/heure';
-    document.getElementById('tap-value').textContent = userData.coinsPerTap;
-    document.getElementById('ref-count').textContent = userData.referrals || 0;
-    document.getElementById('ref-link').textContent = `https://t.me/YourBot?start=${telegramId}`;
-    renderCards();
-}
-
 function formatNumber(n) {
+    n = Math.floor(n || 0);
     if (n >= 1000000) return (n / 1000000).toFixed(1) + 'M';
     if (n >= 1000) return (n / 1000).toFixed(1) + 'K';
     return n.toString();
 }
 
-// TAP
-document.getElementById('tap-btn').addEventListener('click', async (e) => {
-    if (!userData) return;
-    userData.coins = (userData.coins || 0) + (userData.coinsPerTap || 1);
-    document.getElementById('coins').textContent = formatNumber(Math.floor(userData.coins));
+function updateUI() {
+    document.getElementById('username').textContent = '👤 ' + telegramUsername;
+    document.getElementById('coins').textContent = formatNumber(coins);
+    document.getElementById('per-hour').textContent = '⚡ ' + formatNumber(coinsPerHour) + ' coins/heure';
+    document.getElementById('tap-value').textContent = coinsPerTap;
+    document.getElementById('ref-count').textContent = referrals;
+    document.getElementById('ref-link').textContent = 'https://t.me/KiraGameBot?start=' + telegramId;
+    renderCards();
+}
 
-    // Animation
+async function loadUser() {
+    try {
+        const res = await fetch(API + '/api/user/init', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ telegramId, username: telegramUsername })
+        });
+        if (res.ok) {
+            const user = await res.json();
+            coins = parseInt(user.coins) || 0;
+            coinsPerTap = parseInt(user.coins_per_tap) || 1;
+            coinsPerHour = parseInt(user.coins_per_hour) || 0;
+            cards = user.cards || [];
+            referrals = parseInt(user.referrals) || 0;
+        }
+    } catch(e) {
+        console.log('Erreur loadUser:', e);
+    }
+    updateUI();
+}
+
+async function saveCoins() {
+    try {
+        await fetch(API + '/api/user/' + telegramId + '/tap', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ coins: Math.floor(coins) })
+        });
+    } catch(e) {}
+}
+
+document.getElementById('tap-btn').addEventListener('click', (e) => {
+    coins += coinsPerTap;
+    document.getElementById('coins').textContent = formatNumber(coins);
+
     const float = document.createElement('div');
     float.className = 'float-tap';
-    float.textContent = '+' + userData.coinsPerTap;
+    float.textContent = '+' + coinsPerTap;
     float.style.left = (e.clientX - 20) + 'px';
     float.style.top = (e.clientY - 20) + 'px';
     document.body.appendChild(float);
     setTimeout(() => float.remove(), 1000);
 
-    // Sauvegarde toutes les 5 taps
-    saveCoins();
+    clearTimeout(saveTimeout);
+    saveTimeout = setTimeout(saveCoins, 2000);
 });
 
-async function saveCoins() {
-    try {
-        await fetch(`${API}/api/user/${telegramId}/tap`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ coins: Math.floor(userData.coins) })
-        });
-    } catch {}
-}
-
-// CARDS
 function renderCards() {
     const grid = document.getElementById('cards-grid');
     grid.innerHTML = '';
     CARDS.forEach(card => {
-        const userCard = userData.cards?.find(c => c.cardId === card.id);
-        const level = userCard ? userCard.level : 0;
+        const userCard = cards.find(c => c.cardId === card.id);
+        const level = userCard ? parseInt(userCard.level) : 0;
         const cost = Math.floor(card.baseCost * Math.pow(1.5, level));
         const income = card.baseIncome * (level + 1);
 
@@ -336,33 +318,38 @@ function renderCards() {
             <div class="card-income">+${formatNumber(income)}/h</div>
             <div class="card-cost">💰 ${formatNumber(cost)}</div>
         `;
-        div.onclick = () => buyCard(card.id, cost, income);
+        div.onclick = () => buyCard(card.id, cost, card.baseIncome);
         grid.appendChild(div);
     });
 }
 
-async function buyCard(cardId, cost, coinsPerHour) {
-    if (!userData || userData.coins < cost) {
+async function buyCard(cardId, cost, baseIncome) {
+    if (coins < cost) {
         alert('Pas assez de coins !');
         return;
     }
     try {
-        const res = await fetch(`${API}/api/user/${telegramId}/buy-card`, {
+        const res = await fetch(API + '/api/user/' + telegramId + '/buy-card', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ cardId, cost, coinsPerHour })
+            body: JSON.stringify({ cardId, cost, coinsPerHour: baseIncome })
         });
         if (res.ok) {
-            userData = await res.json();
+            const user = await res.json();
+            coins = parseInt(user.coins) || 0;
+            coinsPerTap = parseInt(user.coins_per_tap) || 1;
+            coinsPerHour = parseInt(user.coins_per_hour) || 0;
+            cards = user.cards || [];
             updateUI();
         }
-    } catch {}
+    } catch(e) {
+        alert('Erreur achat !');
+    }
 }
 
-// LEADERBOARD
 async function loadLeaderboard() {
     try {
-        const res = await fetch(`${API}/api/leaderboard`);
+        const res = await fetch(API + '/api/leaderboard');
         const users = await res.json();
         const list = document.getElementById('leaderboard-list');
         const medals = ['🥇', '🥈', '🥉'];
@@ -373,24 +360,21 @@ async function loadLeaderboard() {
                 <div class="leader-coins">💰 ${formatNumber(u.coins)}</div>
             </div>
         `).join('');
-    } catch {}
+    } catch(e) {}
 }
 
-// COPY REFERRAL
 document.getElementById('copy-btn').addEventListener('click', () => {
-    const link = `https://t.me/YourBot?start=${telegramId}`;
+    const link = 'https://t.me/KiraGameBot?start=' + telegramId;
     navigator.clipboard.writeText(link).then(() => alert('Lien copié ! 🎉'));
 });
 
-// Revenus passifs auto toutes les secondes
 setInterval(() => {
-    if (userData && userData.coinsPerHour > 0) {
-        userData.coins += userData.coinsPerHour / 3600;
-        document.getElementById('coins').textContent = formatNumber(Math.floor(userData.coins));
+    if (coinsPerHour > 0) {
+        coins += coinsPerHour / 3600;
+        document.getElementById('coins').textContent = formatNumber(coins);
     }
 }, 1000);
 
-// Init
 loadUser();
 </script>
 </body>
