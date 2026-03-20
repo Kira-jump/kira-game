@@ -396,3 +396,17 @@ app.get('/api/user/:telegramId/photo', async (req, res) => {
         }
     } catch (err) { res.json({ photoUrl: null }); }
 });
+
+// UPDATE LEVEL
+app.post('/api/user/:telegramId/update-level', async (req, res) => {
+    try {
+        const { level } = req.body;
+        const { data: user } = await supabase
+            .from('users')
+            .update({ level })
+            .eq('telegram_id', req.params.telegramId)
+            .select()
+            .single();
+        res.json(user);
+    } catch (err) { res.status(500).json({ error: err.message }); }
+});
