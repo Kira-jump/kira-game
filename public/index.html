@@ -1074,7 +1074,7 @@ document.getElementById('tap-btn').addEventListener('click', (e) => {
     clearTimeout(displayTimeout);
     displayTimeout = setTimeout(() => {
         isTapping = false;
-        if (!isTapping) document.getElementById('coins').textContent = formatNumber(coins);
+        if (!isTapping) document.getElementById('coins').textContent = formatCoins(coins);
     }, 5000);
 });
 
@@ -1180,7 +1180,7 @@ document.getElementById('copy-btn').addEventListener('click', () => {
 setInterval(() => {
     if (coinsPerHour > 0) {
         coins += coinsPerHour / 3600;
-        document.getElementById('coins').textContent = formatNumber(coins);
+        document.getElementById('coins').textContent = formatCoins(coins);
     }
 }, 1000);
 
@@ -1572,7 +1572,7 @@ async function spinWheel() {
             if (reward.type === 'coins') {
                 coins += reward.value;
                 totalCoins += reward.value;
-                document.getElementById('coins').textContent = formatNumber(coins);
+                document.getElementById('coins').textContent = formatCoins(coins);
                 updateLevelUI();
             }
         }, 4200);
