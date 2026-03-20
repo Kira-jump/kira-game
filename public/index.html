@@ -670,22 +670,39 @@
 .game-header {
     display: flex;
     align-items: center;
-    padding: 10px 15px;
-    gap: 12px;
+    padding: 15px 15px 10px;
+    gap: 15px;
     width: 100%;
+    background: linear-gradient(180deg, rgba(22,33,62,0.8) 0%, transparent 100%);
 }
 .avatar-circle {
-    width: 50px;
-    height: 50px;
+    width: 70px;
+    height: 70px;
     border-radius: 50%;
     border: 3px solid #cd7f32;
-    overflow: hidden;
+    overflow: visible;
     flex-shrink: 0;
     background: linear-gradient(135deg, #f0c040, #e07b00);
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 22px;
+    font-size: 28px;
+    position: relative;
+    box-shadow: 0 0 20px rgba(205,127,50,0.4);
+}
+.avatar-level-tag {
+    position: absolute;
+    bottom: -10px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: #cd7f32;
+    border-radius: 8px;
+    padding: 2px 8px;
+    font-size: 9px;
+    font-weight: 900;
+    white-space: nowrap;
+    color: white;
+    border: 1px solid rgba(255,255,255,0.2);
 }
 .avatar-circle img {
     width: 100%;
@@ -710,10 +727,22 @@
 }
 .header-progress-bar {
     width: 100%;
-    height: 5px;
+    height: 6px;
     background: rgba(255,255,255,0.08);
     border-radius: 10px;
-    overflow: hidden;
+    overflow: visible;
+    position: relative;
+}
+.header-progress-cursor {
+    position: absolute;
+    top: -4px;
+    width: 0;
+    height: 0;
+    border-left: 5px solid transparent;
+    border-right: 5px solid transparent;
+    border-bottom: 8px solid #f0c040;
+    transform: translateX(-50%);
+    transition: left 0.5s ease;
 }
 .header-progress-fill {
     height: 100%;
@@ -730,19 +759,21 @@
 }
 .coins-cartouche {
     flex-shrink: 0;
-    background: rgba(240,192,64,0.1);
-    border: 1px solid rgba(240,192,64,0.25);
-    border-radius: 15px;
-    padding: 8px 12px;
+    background: rgba(240,192,64,0.12);
+    border: 1px solid rgba(240,192,64,0.3);
+    border-radius: 18px;
+    padding: 10px 15px;
     text-align: center;
-    min-width: 75px;
+    min-width: 90px;
+    box-shadow: 0 0 15px rgba(240,192,64,0.1);
 }
 .coins-cartouche-icon { font-size: 16px; }
 .coins-cartouche-value {
-    font-size: 14px;
+    font-size: 18px;
     font-weight: 900;
     color: #f0c040;
     letter-spacing: -0.5px;
+    line-height: 1.1;
 }
 .coins-cartouche-label { font-size: 9px; color: #888; }
 </style>
@@ -759,15 +790,19 @@
     <div class="home">
         <!-- NOUVEAU HEADER -->
         <div class="game-header">
+            <div style="position:relative;display:inline-block">
             <div class="avatar-circle" id="avatar-circle">
                 <img id="player-avatar" src="" style="display:none;width:100%;height:100%;object-fit:cover;" onerror="this.style.display='none';document.getElementById('avatar-emoji').style.display='block'">
                 <span id="avatar-emoji">👊</span>
+            </div>
+            <div class="avatar-level-tag" id="avatar-level-tag">🥉 Bronze</div>
             </div>
             <div class="header-middle">
                 <div class="header-username" id="username">Joueur</div>
                 <div class="header-level-name" id="header-level-name">🥉 Bronze</div>
                 <div class="header-progress-bar">
                     <div class="header-progress-fill" id="level-progress-fill" style="width:0%"></div>
+                    <div class="header-progress-cursor" id="level-progress-cursor" style="left:0%"></div>
                 </div>
                 <div class="header-progress-text">
                     <span id="level-current-coins">0</span>
@@ -1250,6 +1285,13 @@ function updateLevelUI() {
     if (circle) circle.style.borderColor = LEVEL_COLORS[current.name] || '#cd7f32';
     const ln = document.getElementById('header-level-name');
     if (ln) { ln.textContent = current.icon + ' ' + current.name; ln.style.color = LEVEL_COLORS[current.name] || '#cd7f32'; }
+    const tag = document.getElementById('avatar-level-tag');
+    if (tag) { tag.textContent = current.icon + ' ' + current.name; tag.style.background = LEVEL_COLORS[current.name] || '#cd7f32'; }
+    if (next) {
+        const progress = Math.min(((totalCoins - current.min) / (next.min - current.min)) * 100, 100);
+        const cursor = document.getElementById('level-progress-cursor');
+        if (cursor) cursor.style.left = progress + '%';
+    }
     document.getElementById('level-badge').textContent = current.icon + ' ' + current.name;
     if (next) {
         const progress = ((totalCoins - current.min) / (next.min - current.min)) * 100;
