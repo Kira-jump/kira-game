@@ -952,6 +952,7 @@ let cards = [];
 let referrals = 0;
 let saveTimeout = null;
 let displayTimeout = null;
+let isTapping = false;
 
 const CARDS = [
     { id: 'mine', icon: '⛏️', name: 'Mine', baseCost: 100, baseIncome: 10 },
@@ -1067,13 +1068,13 @@ document.getElementById('tap-btn').addEventListener('click', (e) => {
 
     totalCoins += coinsPerTap;
     updateLevelUI();
+    isTapping = true;
     clearTimeout(saveTimeout);
     saveTimeout = setTimeout(saveCoins, 1500);
-    
-    // Garde format long pendant 5s
     clearTimeout(displayTimeout);
     displayTimeout = setTimeout(() => {
-        document.getElementById('coins').textContent = formatNumber(coins);
+        isTapping = false;
+        if (!isTapping) document.getElementById('coins').textContent = formatNumber(coins);
     }, 5000);
 });
 
