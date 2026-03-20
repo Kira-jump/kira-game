@@ -75,88 +75,7 @@
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
 
         /* HOME */
-        .game-header {
-    display: flex;
-    align-items: center;
-    padding: 12px 15px;
-    gap: 12px;
-    width: 100%;
-    margin-bottom: 10px;
-}
-.avatar-circle {
-    width: 52px;
-    height: 52px;
-    border-radius: 50%;
-    border: 3px solid #cd7f32;
-    overflow: hidden;
-    flex-shrink: 0;
-    background: linear-gradient(135deg, #f0c040, #e07b00);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 24px;
-    position: relative;
-}
-.avatar-circle img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-    border-radius: 50%;
-}
-.header-middle {
-    flex: 1;
-    min-width: 0;
-}
-.header-username {
-    font-size: 13px;
-    font-weight: 800;
-    color: white;
-    margin-bottom: 4px;
-}
-.header-level-name {
-    font-size: 10px;
-    color: #cd7f32;
-    font-weight: 700;
-    margin-bottom: 6px;
-}
-.header-progress-bar {
-    width: 100%;
-    height: 5px;
-    background: rgba(255,255,255,0.08);
-    border-radius: 10px;
-    overflow: hidden;
-}
-.header-progress-fill {
-    height: 100%;
-    background: linear-gradient(90deg, #f0c040, #e07b00);
-    border-radius: 10px;
-    transition: width 0.5s ease;
-}
-.header-progress-text {
-    display: flex;
-    justify-content: space-between;
-    font-size: 9px;
-    color: #555;
-    margin-top: 3px;
-}
-.coins-cartouche {
-    flex-shrink: 0;
-    background: rgba(240,192,64,0.1);
-    border: 1px solid rgba(240,192,64,0.25);
-    border-radius: 15px;
-    padding: 8px 12px;
-    text-align: center;
-    min-width: 75px;
-}
-.coins-cartouche-icon { font-size: 16px; }
-.coins-cartouche-value {
-    font-size: 14px;
-    font-weight: 900;
-    color: #f0c040;
-    letter-spacing: -0.5px;
-}
-.coins-cartouche-label { font-size: 9px; color: #888; }
-.home {
+        .home {
             display: flex;
             flex-direction: column;
             align-items: center;
@@ -1237,45 +1156,7 @@ function getNextLevel() {
     return LEVELS[idx + 1] || null;
 }
 
-const LEVEL_COLORS = {
-    Bronze: '#cd7f32',
-    Silver: '#c0c0c0',
-    Gold: '#ffd700',
-    Platinum: '#00bfff',
-    Diamond: '#b9f2ff',
-    Legend: '#ff6600'
-};
-
 function updateLevelUI() {
-    const current = getCurrentLevel();
-    const next = getNextLevel();
-    // Couleur bordure avatar
-    const circle = document.getElementById('avatar-circle');
-    if (circle) circle.style.borderColor = LEVEL_COLORS[current.name] || '#cd7f32';
-    // Nom niveau
-    const levelName = document.getElementById('header-level-name');
-    if (levelName) {
-        levelName.textContent = current.icon + ' ' + current.name;
-        levelName.style.color = LEVEL_COLORS[current.name] || '#cd7f32';
-    }
-    // Barre progression
-    if (next) {
-        const progress = ((totalCoins - current.min) / (next.min - current.min)) * 100;
-        const fill = document.getElementById('level-progress-fill');
-        if (fill) fill.style.width = Math.min(progress, 100) + '%';
-        const curr = document.getElementById('level-current-coins');
-        const nxt = document.getElementById('level-next-coins');
-        if (curr) curr.textContent = formatNumber(totalCoins - current.min);
-        if (nxt) nxt.textContent = formatNumber(next.min - current.min);
-    } else {
-        const fill = document.getElementById('level-progress-fill');
-        if (fill) fill.style.width = '100%';
-    }
-    // Cache anciens badges
-    const oldBadge = document.getElementById('level-badge');
-    if (oldBadge) oldBadge.style.display = 'none';
-    const oldProgress = document.querySelector('.level-progress');
-    if (oldProgress) oldProgress.style.display = 'none';
     const current = getCurrentLevel();
     const next = getNextLevel();
     document.getElementById('level-badge').textContent = current.icon + ' ' + current.name;
