@@ -1035,6 +1035,14 @@ async function loadUser() {
             document.getElementById('player-avatar').textContent = currentAvatar;
             
             totalCoins = parseInt(user.coins) || 0;
+            // Sync total_coins avec coins
+            if (parseInt(user.total_coins) < totalCoins) {
+                fetch(API + '/api/user/' + telegramId + '/tap', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ coins: totalCoins })
+                }).catch(() => {});
+            }
             updateLevelUI();
         }
     } catch(e) { console.log('Erreur:', e); }
@@ -1066,7 +1074,7 @@ document.getElementById('tap-btn').addEventListener('click', (e) => {
     document.body.appendChild(float);
     setTimeout(() => float.remove(), 800);
 
-    totalCoins += coinsPerTap;
+    totalCoins = coins;
     updateLevelUI();
     isTapping = true;
     clearTimeout(saveTimeout);
