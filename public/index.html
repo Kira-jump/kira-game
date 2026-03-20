@@ -764,11 +764,12 @@
 }
 .coins-cartouche-icon { font-size: 16px; }
 .coins-cartouche-value {
-    font-size: 16px;
+    font-size: 13px;
     font-weight: 900;
     color: #f0c040;
     letter-spacing: -0.5px;
     line-height: 1.1;
+    white-space: nowrap;
 }
 .coins-cartouche-label { font-size: 9px; color: #888; }
 </style>
@@ -985,9 +986,14 @@ function formatNumber(n) {
     return n.toString();
 }
 
+function formatCoins(n) {
+    n = Math.floor(n || 0);
+    return n.toLocaleString('fr-FR');
+}
+
 function updateUI() {
     document.getElementById('username').textContent = telegramUsername;
-    document.getElementById('coins').textContent = formatNumber(coins);
+    document.getElementById('coins').textContent = formatCoins(coins);
     document.getElementById('per-hour-val').textContent = formatNumber(coinsPerHour);
     document.getElementById('tap-value').textContent = coinsPerTap;
     document.getElementById('ref-count').textContent = referrals;
@@ -1046,7 +1052,7 @@ async function saveCoins() {
 document.getElementById('tap-btn').addEventListener('click', (e) => {
     coins += coinsPerTap;
     const el = document.getElementById('coins');
-    el.textContent = formatNumber(coins);
+    el.textContent = formatCoins(coins);
     el.style.transform = 'scale(1.15)';
     setTimeout(() => el.style.transform = 'scale(1)', 100);
 
