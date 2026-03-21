@@ -1313,7 +1313,7 @@ function updateLevelUI() {
             body: JSON.stringify({ level: current.name })
         }).catch(() => {});
     }
-    document.getElementById('level-badge').textContent = current.icon + ' ' + current.name;
+    const badge = document.getElementById('level-badge'); if(badge) badge.textContent = current.icon + ' ' + current.name;
     if (next) {
         const progress = ((totalCoins - current.min) / (next.min - current.min)) * 100;
         const fill = document.getElementById('level-progress-fill');
