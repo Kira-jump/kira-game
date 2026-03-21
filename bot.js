@@ -410,3 +410,88 @@ app.post('/api/user/:telegramId/update-level', async (req, res) => {
         res.json(user);
     } catch (err) { res.status(500).json({ error: err.message }); }
 });
+
+// SHOP ITEMS
+const SHOP_ITEMS = [
+    { id: 'tap_plus1', name: '+1 Tap permanent', icon: '⚡', priceTon: 0.5, priceCoins: null, type: 'tap', value: 1 },
+    { id: 'tap_plus5', name: '+5 Tap permanent', icon: '⚡⚡', priceTon: 2, priceCoins: null, type: 'tap', value: 5 },
+    { id: 'tap_plus10', name: '+10 Tap permanent', icon: '🔥', priceTon: 5, priceCoins: null, type: 'tap', value: 10 },
+    { id: 'wheel_ticket', name: 'Ticket Roue x3', icon: '🎰', priceTon: null, priceCoins: 50000, type: 'wheel', value: 3 },
+    { id: 'vip_badge', name: 'Badge VIP', icon: '👑', priceTon: 1, priceCoins: null, type: 'vip', value: 1 },
+    { id: 'coins_pack1', name: '1M Coins', icon: '💰', priceTon: 0.3, priceCoins: null, type: 'coins', value: 1000000 },
+    { id: 'coins_pack2', name: '10M Coins', icon: '💎', priceTon: 1, priceCoins: null, type: 'coins', value: 10000000 },
+    { id: 'shield', name: 'Bouclier 24h', icon: '🛡️', priceTon: null, priceCoins: 100000, type: 'shield', value: 24 },
+];
+
+// GET SHOP ITEMS
+app.get('/api/shop', async (req, res) => {
+    try {
+        res.json(SHOP_ITEMS);
+    } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+// BUY WITH COINS
+app.post('/api/shop/:telegramId/buy-coins', async (req, res) => {
+    try {
+        const { itemId } = req.body;
+        const item = SHOP_ITEMS.find(i => i.id === itemId);
+        if (!item || !item.priceCoins) return res.status(400).json({ error: 'Item invalide' });
+
+        const { data: user } = await supabase.from('users').select('*').eq('telegram_id', req.params.telegramId).single();
+        if (!user) return res.status(404).json({ error: 'Utilisateur non trouvé' });
+        if (user.coins < item.priceCoins) return res.status(400).json({ error: 'Pas assez de coins' });
+
+        let updates = { coins: user.coins - item.priceCoins };
+
+        if (item.type === 'shield') {
+            const shieldUntil = new Date(Date.now() + item.value * 3600 * 1000);
+            updates.shield_until = shieldUntil;
+        } else if (item.type === 'wheel') {
+            // Ajoute tickets roue
+            await supabase.from('wheel_spins').delete()
+                .eq('telegram_id', req.params.telegramId)
+                .eq('spun_date', new Date().toISOString().split('T')[0]);
+        }
+
+        const { data: updated } = await supabase.from('users').update(updates).eq('telegram_id', req.params.telegramId).select().single();
+        await supabase.from('shop_purchases').insert({ telegram_id: req.params.telegramId, item_id: itemId, price_coins: item.priceCoins });
+
+        bot.sendMessage(req.params.telegramId, `✅ Achat réussi ! Tu as acheté ${item.icon} ${item.name} !`, {
+            reply_markup: { inline_keyboard: [[{ text: '🎮 Jouer', web_app: { url: process.env.APP_URL } }]] }
+        });
+
+        res.json(updated);
+    } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+// BUY WITH TON
+app.post('/api/shop/:telegramId/buy-ton', async (req, res) => {
+    try {
+        const { itemId, txHash } = req.body;
+        const item = SHOP_ITEMS.find(i => i.id === itemId);
+        if (!item || !item.priceTon) return res.status(400).json({ error: 'Item invalide' });
+
+        const { data: user } = await supabase.from('users').select('*').eq('telegram_id', req.params.telegramId).single();
+        if (!user) return res.status(404).json({ error: 'Utilisateur non trouvé' });
+
+        let updates = {};
+
+        if (item.type === 'tap') {
+            updates.extra_tap = (user.extra_tap || 0) + item.value;
+            updates.coins_per_tap = (user.coins_per_tap || 1) + item.value;
+        } else if (item.type === 'coins') {
+            updates.coins = user.coins + item.value;
+        } else if (item.type === 'vip') {
+            updates.is_vip = true;
+        }
+
+        const { data: updated } = await supabase.from('users').update(updates).eq('telegram_id', req.params.telegramId).select().single();
+        await supabase.from('shop_purchases').insert({ telegram_id: req.params.telegramId, item_id: itemId, price_ton: item.priceTon });
+
+        bot.sendMessage(req.params.telegramId, `✅ Achat TON réussi ! Tu as acheté ${item.icon} ${item.name} !`, {
+            reply_markup: { inline_keyboard: [[{ text: '🎮 Jouer', web_app: { url: process.env.APP_URL } }]] }
+        });
+
+        res.json(updated);
+    } catch (err) { res.status(500).json({ error: err.message }); }
+});
