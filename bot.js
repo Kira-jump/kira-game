@@ -581,3 +581,87 @@ app.get('/api/admin/promos', async (req, res) => {
         res.json(promos || []);
     } catch (err) { res.status(500).json({ error: err.message }); }
 });
+
+// GET PLAYER STATS
+app.get('/api/stats/:telegramId', async (req, res) => {
+    try {
+        const { data: user } = await supabase
+            .from('users')
+            .select('*')
+            .eq('telegram_id', req.params.telegramId)
+            .single();
+
+        if (!user) return res.status(404).json({ error: 'Utilisateur non trouvé' });
+
+        // Rang global
+        const { count } = await supabase
+            .from('users')
+            .select('*', { count: 'exact' })
+            .gt('coins', user.coins);
+
+        // Total missions complétées
+        const { data: missions } = await supabase
+            .from('missions')
+            .select('*')
+            .eq('telegram_id', req.params.telegramId);
+
+        // Total tours de roue
+        const { data: spins } = await supabase
+            .from('wheel_spins')
+            .select('*')
+            .eq('telegram_id', req.params.telegramId);
+
+        // Meilleure récompense roue
+        const bestSpin = spins?.reduce((best, spin) => 
+            spin.reward_value > (best?.reward_value || 0) ? spin : best, null);
+
+        res.json({
+            user,
+            globalRank: (count || 0) + 1,
+            totalMissions: missions?.length || 0,
+            totalSpins: spins?.length || 0,
+            bestSpinReward: bestSpin?.reward || 'Aucune',
+            bestSpinValue: bestSpin?.reward_value || 0
+        });
+    } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+// UPDATE TAPS
+app.post('/api/user/:telegramId/update-taps', async (req, res) => {
+    try {
+        const { taps } = req.body;
+        const { data: user } = await supabase
+            .from('users')
+            .select('*')
+            .eq('telegram_id', req.params.telegramId)
+            .single();
+
+        if (!user) return res.status(404).json({ error: 'Utilisateur non trouvé' });
+
+        const newTotalTaps = (user.total_taps || 0) + taps;
+        const newBestDay = Math.max(user.best_day_taps || 0, taps);
+
+        // Check streak
+        const today = new Date().toISOString().split('T')[0];
+        const lastReset = user.last_daily_reset;
+        let streak = user.streak || 0;
+
+        if (lastReset !== today) {
+            const yesterday = new Date(Date.now() - 86400000).toISOString().split('T')[0];
+            if (lastReset === yesterday) {
+                streak += 1;
+            } else {
+                streak = 1;
+            }
+        }
+
+        await supabase.from('users').update({
+            total_taps: newTotalTaps,
+            best_day_taps: newBestDay,
+            streak,
+            last_daily_reset: today
+        }).eq('telegram_id', req.params.telegramId);
+
+        res.json({ success: true });
+    } catch (err) { res.status(500).json({ error: err.message }); }
+});
