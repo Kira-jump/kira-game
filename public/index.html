@@ -2,12 +2,13 @@
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Kira Game</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&display=swap" rel="stylesheet">
     <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
+        * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
+body { overscroll-behavior: none; }
 
         body {
             background: #0d0d1a;
@@ -369,7 +370,7 @@
 }
 
 .boost-container {
-    margin-top: 15px;
+    margin-top: 8px;
     display: flex;
     gap: 10px;
     justify-content: center;
@@ -378,7 +379,7 @@
     background: linear-gradient(135deg, rgba(22,33,62,0.9), rgba(15,25,50,0.9));
     border: 1px solid rgba(255,255,255,0.08);
     border-radius: 15px;
-    padding: 10px 15px;
+    padding: 7px 12px;
     text-align: center;
     cursor: pointer;
     transition: all 0.2s;
@@ -392,8 +393,8 @@
     background: linear-gradient(135deg, rgba(240,192,64,0.2), rgba(224,123,0,0.1));
 }
 .boost-btn.cooldown { opacity: 0.5; cursor: default; }
-.boost-icon { font-size: 24px; }
-.boost-name { font-size: 12px; font-weight: 800; margin: 3px 0; }
+.boost-icon { font-size: 20px; }
+.boost-name { font-size: 11px; font-weight: 800; margin: 2px 0; }
 .boost-timer { font-size: 11px; color: #f0c040; font-weight: 700; }
 
 .boost-active-bar {
@@ -815,7 +816,7 @@
         </div>
 
         <!-- WALLET (caché par défaut) -->
-        <button class="wallet-btn" id="wallet-btn" onclick="connectWallet()" style="margin:5px auto;">
+        <button class="wallet-btn" id="wallet-btn" onclick="connectWallet()" style="margin:3px auto;padding:8px 15px;font-size:13px;">
             💎 Connecter Wallet TON
         </button>
         <div class="wallet-connected" id="wallet-connected">
