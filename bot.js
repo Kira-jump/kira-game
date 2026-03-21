@@ -495,3 +495,89 @@ app.post('/api/shop/:telegramId/buy-ton', async (req, res) => {
         res.json(updated);
     } catch (err) { res.status(500).json({ error: err.message }); }
 });
+
+// USE PROMO CODE
+app.post('/api/promo/:telegramId/use', async (req, res) => {
+    try {
+        const { code } = req.body;
+        const upperCode = code.toUpperCase().trim();
+
+        // Vérifie si le code existe
+        const { data: promo } = await supabase
+            .from('promo_codes')
+            .select('*')
+            .eq('code', upperCode)
+            .single();
+
+        if (!promo) return res.status(404).json({ error: 'Code invalide !' });
+
+        // Vérifie expiration
+        if (promo.expires_at && new Date(promo.expires_at) < new Date()) {
+            return res.status(400).json({ error: 'Code expiré !' });
+        }
+
+        // Vérifie max uses
+        if (promo.current_uses >= promo.max_uses) {
+            return res.status(400).json({ error: 'Code épuisé !' });
+        }
+
+        // Vérifie si déjà utilisé
+        const { data: alreadyUsed } = await supabase
+            .from('promo_uses')
+            .select('*')
+            .eq('telegram_id', req.params.telegramId)
+            .eq('code', upperCode)
+            .single();
+
+        if (alreadyUsed) return res.status(400).json({ error: 'Code déjà utilisé !' });
+
+        // Applique la récompense
+        const { data: user } = await supabase.from('users').select('*').eq('telegram_id', req.params.telegramId).single();
+        if (!user) return res.status(404).json({ error: 'Utilisateur non trouvé' });
+
+        const { data: updated } = await supabase
+            .from('users')
+            .update({ coins: user.coins + promo.reward_coins })
+            .eq('telegram_id', req.params.telegramId)
+            .select()
+            .single();
+
+        // Enregistre l'utilisation
+        await supabase.from('promo_uses').insert({
+            telegram_id: req.params.telegramId,
+            code: upperCode
+        });
+
+        // Incrémente le compteur
+        await supabase.from('promo_codes').update({
+            current_uses: promo.current_uses + 1
+        }).eq('code', upperCode);
+
+        res.json({ success: true, reward: promo.reward_coins, user: updated });
+    } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+// CREATE PROMO CODE (Admin)
+app.post('/api/admin/promo/create', async (req, res) => {
+    try {
+        const { code, rewardCoins, maxUses, expiresAt, password } = req.body;
+        if (password !== ADMIN_PASSWORD) return res.status(401).json({ error: 'Non autorisé' });
+
+        const { data: promo } = await supabase.from('promo_codes').insert({
+            code: code.toUpperCase().trim(),
+            reward_coins: rewardCoins,
+            max_uses: maxUses || 100,
+            expires_at: expiresAt || null
+        }).select().single();
+
+        res.json(promo);
+    } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+// GET PROMO CODES (Admin)
+app.get('/api/admin/promos', async (req, res) => {
+    try {
+        const { data: promos } = await supabase.from('promo_codes').select('*').order('created_at', { ascending: false });
+        res.json(promos || []);
+    } catch (err) { res.status(500).json({ error: err.message }); }
+});
