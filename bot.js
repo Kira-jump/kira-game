@@ -665,3 +665,66 @@ app.post('/api/user/:telegramId/update-taps', async (req, res) => {
         res.json({ success: true });
     } catch (err) { res.status(500).json({ error: err.message }); }
 });
+
+// GET CHAT MESSAGES
+app.get('/api/chat', async (req, res) => {
+    try {
+        const { data: messages } = await supabase
+            .from('chat_messages')
+            .select('*')
+            .order('created_at', { ascending: false })
+            .limit(50);
+        res.json(messages || []);
+    } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+// SEND CHAT MESSAGE
+app.post('/api/chat/:telegramId', async (req, res) => {
+    try {
+        const { message } = req.body;
+        if (!message || message.trim().length === 0) return res.status(400).json({ error: 'Message vide' });
+        if (message.length > 200) return res.status(400).json({ error: 'Message trop long' });
+
+        const { data: user } = await supabase
+            .from('users')
+            .select('username, level, is_vip')
+            .eq('telegram_id', req.params.telegramId)
+            .single();
+
+        if (!user) return res.status(404).json({ error: 'Utilisateur non trouvé' });
+
+        // Anti-spam - vérifie dernier message
+        const { data: lastMsg } = await supabase
+            .from('chat_messages')
+            .select('created_at')
+            .eq('telegram_id', req.params.telegramId)
+            .order('created_at', { ascending: false })
+            .limit(1)
+            .single();
+
+        if (lastMsg) {
+            const diff = Date.now() - new Date(lastMsg.created_at).getTime();
+            if (diff < 10000) return res.status(429).json({ error: 'Attends ' + Math.ceil((10000 - diff) / 1000) + 's avant d\'envoyer !' });
+        }
+
+        const { data: newMsg } = await supabase
+            .from('chat_messages')
+            .insert({
+                telegram_id: req.params.telegramId,
+                username: user.username,
+                level: user.level || 'Bronze',
+                is_vip: user.is_vip || false,
+                message: message.trim()
+            })
+            .select()
+            .single();
+
+        // Supprime les messages de plus de 48h
+        await supabase
+            .from('chat_messages')
+            .delete()
+            .lt('created_at', new Date(Date.now() - 48 * 3600 * 1000).toISOString());
+
+        res.json(newMsg);
+    } catch (err) { res.status(500).json({ error: err.message }); }
+});
