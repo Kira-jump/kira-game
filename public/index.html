@@ -1512,7 +1512,7 @@ let walletAddress = null;
 async function initTonConnect() {
     try {
         tonConnectUI = new TON_CONNECT_UI.TonConnectUI({
-            restoreConnection: false,
+            restoreConnection: true,
             manifestUrl: 'https://raw.githubusercontent.com/Kira-jump/kira-game/main/public/tonconnect-manifest.json',
         });
         tonConnectUI.onStatusChange(wallet => {
@@ -1861,7 +1861,7 @@ async function buyItem(itemId) {
             const tx = {
                 validUntil: Math.floor(Date.now() / 1000) + 600,
                 messages: [{
-                    address: 'UQDy7R-iFzXr7CkNf6YWUAlHI1QfscSw7MzNzNRea5CZncnp',
+                    address: 'UQDGKus1j0cjtOTy-FeqvGDpqfohTLlL82L03_GXDpl6tZSE',
                     amount: String(Math.floor(item.priceTon * 1e9)),
                     payload: ''
                 }]
