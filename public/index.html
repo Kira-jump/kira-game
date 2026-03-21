@@ -1862,8 +1862,7 @@ async function buyItem(itemId) {
                 validUntil: Math.floor(Date.now() / 1000) + 600,
                 messages: [{
                     address: 'UQDGKus1j0cjtOTy-FeqvGDpqfohTLlL82L03_GXDpl6tZSE',
-                    amount: String(Math.floor(item.priceTon * 1e9)),
-                    payload: ''
+                    amount: String(Math.floor(item.priceTon * 1e9))
                 }]
             };
             await tonConnectUI.sendTransaction(tx);
