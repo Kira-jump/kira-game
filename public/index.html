@@ -1034,7 +1034,7 @@ async function loadUser() {
             currentAvatar = user.avatar || '👊';
             document.getElementById('player-avatar').textContent = currentAvatar;
             
-            totalCoins = parseInt(user.coins) || 0; // Force sync
+            totalCoins = parseInt(user.coins) || 0; // Force sync // Force sync
             // Sync total_coins avec coins
             if (parseInt(user.total_coins) < totalCoins) {
                 fetch(API + '/api/user/' + telegramId + '/tap', {
