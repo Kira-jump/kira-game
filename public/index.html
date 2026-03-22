@@ -1737,7 +1737,7 @@ async function loadLeaderboard() {
         list.innerHTML = myRankHtml + users.map((u, i) => `
             <div class="leader-item" style="${u.username === telegramUsername ? 'border-color:rgba(240,192,64,0.4)' : ''}">
                 <div class="leader-rank">${i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : (i+1)}</div>
-                <div class="leader-avatar">${u.avatar || '👊'}</div>
+<div class="leader-avatar" style="overflow:hidden;background:linear-gradient(135deg,#f0c040,#e07b00);display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:900;color:#1a1a2e;">${u.username === telegramUsername && document.getElementById('player-avatar').src ? '<img src="' + document.getElementById('player-avatar').src + '" style="width:100%;height:100%;object-fit:cover;">' : u.username.charAt(0).toUpperCase()}</div>
                 <div class="leader-name">${u.username}</div>
                 <div class="leader-coins"><img src="/coins_silver.png" style="width:18px;height:18px;object-fit:cover;border-radius:50%;vertical-align:middle;margin-right:3px;">${formatNumber(u.coins)}</div>
             </div>
