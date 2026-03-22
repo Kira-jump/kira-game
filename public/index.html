@@ -2528,8 +2528,9 @@ document.getElementById('promo-input').addEventListener('keypress', (e) => {
 let sessionTaps = 0;
 
 function showPageFromHome(page) {
-    const moreBtn = document.querySelector('[onclick="showPage(\'more\', this)"]');
-    if (moreBtn) showPage(page, moreBtn);
+    // Trouve n'importe quel bouton nav actif
+    const anyBtn = document.querySelector('.nav-btn');
+    showPage(page, anyBtn);
 }
 
 function navigateTo(page) {
