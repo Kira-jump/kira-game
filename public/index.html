@@ -1592,6 +1592,12 @@ async function loadUser() {
                         img.style.display = 'block';
                         const emoji = document.getElementById('avatar-emoji');
                         if (emoji) emoji.style.display = 'none';
+                        // Sauvegarde photo
+                        fetch(API + '/api/user/' + telegramId + '/save-photo', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ photoUrl: data.photoUrl })
+                        }).catch(() => {});
                     }
                 }).catch(() => {
                     document.getElementById('player-avatar').style.display = 'none';
