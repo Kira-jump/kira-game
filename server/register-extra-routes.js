@@ -25,7 +25,7 @@ function buildCardState(card, owned) {
 }
 
 module.exports = function registerExtraRoutes(app, deps) {
-    const { supabase, bot, sendNotification, getLevel, features, adminSecret } = deps;
+    const { supabase, bot, sendNotification, getLevel, features, adminSecret, botUsername } = deps;
 
     app.get('/api/user/:telegramId/state', async (req, res) => {
         try {
@@ -64,7 +64,7 @@ module.exports = function registerExtraRoutes(app, deps) {
                 .order('created_at', { ascending: false });
 
             res.json({
-                inviteLink: `https://t.me/${process.env.BOT_USERNAME || 'your_bot'}?start=${req.params.telegramId}`,
+                inviteLink: `https://t.me/${botUsername || 'your_bot'}?start=${req.params.telegramId}`,
                 referrals: referrals || [],
             });
         } catch (err) {

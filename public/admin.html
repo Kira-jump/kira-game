@@ -301,22 +301,25 @@
     </div>
 </div>
 
+<script src="/app-config.js"></script>
 <script>
-const API = 'https://kira-game-production.up.railway.app';
-const ADMIN_PASSWORD = 'kira2024admin';
+const API = window.APP_CONFIG?.API_BASE_URL || window.location.origin;
+let adminSecret = sessionStorage.getItem('adminSecret') || '';
 
 function login() {
     const pwd = document.getElementById('admin-password').value;
-    if (pwd === ADMIN_PASSWORD) {
-        document.getElementById('login-screen').style.display = 'none';
-        document.getElementById('dashboard').style.display = 'block';
-        loadDashboard();
-    } else {
-        document.getElementById('login-error').style.display = 'block';
-    }
+    if (!pwd) return;
+    adminSecret = pwd;
+    sessionStorage.setItem('adminSecret', pwd);
+    document.getElementById('login-error').style.display = 'none';
+    document.getElementById('login-screen').style.display = 'none';
+    document.getElementById('dashboard').style.display = 'block';
+    loadDashboard();
 }
 
 function logout() {
+    sessionStorage.removeItem('adminSecret');
+    adminSecret = '';
     document.getElementById('login-screen').style.display = 'block';
     document.getElementById('dashboard').style.display = 'none';
     document.getElementById('admin-password').value = '';
@@ -331,8 +334,14 @@ function formatNumber(n) {
 
 async function loadDashboard() {
     try {
-        const res = await fetch(API + '/api/admin/stats');
-        if (!res.ok) return;
+        const res = await fetch(API + '/api/admin/stats', {
+            headers: { 'x-admin-secret': adminSecret }
+        });
+        if (!res.ok) {
+            document.getElementById('login-error').style.display = 'block';
+            logout();
+            return;
+        }
         const data = await res.json();
 
         document.getElementById('stat-users').textContent = data.totalUsers || 0;
@@ -366,7 +375,7 @@ async function notifyAll() {
         const res = await fetch(API + '/api/admin/notify-all', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ message, password: ADMIN_PASSWORD })
+            body: JSON.stringify({ message, password: adminSecret })
         });
         if (res.ok) {
             document.getElementById('notif-success').style.display = 'block';
@@ -384,7 +393,7 @@ async function giveCoins() {
         const res = await fetch(API + '/api/admin/give-coins', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ telegramId, amount, password: ADMIN_PASSWORD })
+            body: JSON.stringify({ telegramId, amount, password: adminSecret })
         });
         if (res.ok) {
             document.getElementById('give-success').style.display = 'block';
@@ -408,7 +417,7 @@ async function createPromo() {
         const res = await fetch(API + '/api/admin/promo/create', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ code, rewardCoins: coins, maxUses, expiresAt, password: ADMIN_PASSWORD })
+            body: JSON.stringify({ code, rewardCoins: coins, maxUses, expiresAt, password: adminSecret })
         });
         if (res.ok) {
             document.getElementById('promo-success').style.display = 'block';
@@ -425,9 +434,14 @@ async function createPromo() {
 }
 
 async function loadPromos() {
+    if (!adminSecret) return;
     try {
-        const res = await fetch(API + '/api/admin/promos');
-        if (!res.ok) return;
+        const res = await fetch(API + '/api/admin/promos', {
+            headers: { 'x-admin-secret': adminSecret }
+        });
+        if (!res.ok) {
+            return;
+        }
         const promos = await res.json();
         const list = document.getElementById('promo-list');
         if (promos.length === 0) {
@@ -445,7 +459,13 @@ async function loadPromos() {
     } catch(e) {}
 }
 
-loadPromos();
+if (adminSecret) {
+    document.getElementById('login-screen').style.display = 'none';
+    document.getElementById('dashboard').style.display = 'block';
+    loadDashboard();
+    loadPromos();
+}
+
 // Auto refresh toutes les 30 secondes
 setInterval(() => { loadDashboard(); loadPromos(); }, 30000);
 </script>

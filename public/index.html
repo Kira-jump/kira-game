@@ -1597,13 +1597,14 @@ body { overscroll-behavior: none; }
 
 </nav>
 
+<script src="/app-config.js"></script>
 <script>
 const tg = window.Telegram.WebApp;
 tg.expand();
 document.addEventListener("touchstart", function(e) { if (e.touches.length > 1) e.preventDefault(); }, { passive: false });
 document.addEventListener("dblclick", function(e) { e.preventDefault(); });
 
-const API = 'https://kira-game-production.up.railway.app';
+const API = window.APP_CONFIG?.API_BASE_URL || window.location.origin;
 const telegramId = tg.initDataUnsafe?.user?.id?.toString() || 'test123';
 const telegramUsername = tg.initDataUnsafe?.user?.first_name || tg.initDataUnsafe?.user?.username || 'Joueur';
 

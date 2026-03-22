@@ -4,7 +4,9 @@
   "description": "",
   "main": "bot.js",
   "scripts": {
-    "start": "node bot.js"
+    "start": "node bot.js",
+    "check": "node --check bot.js && node --check server/register-extra-routes.js && node scripts/check-config.js",
+    "smoke": "node scripts/smoke-test.js"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.0.0",

@@ -1,4 +1,3 @@
-require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 const TelegramBot = require('node-telegram-bot-api');
@@ -6,28 +5,20 @@ const { createClient } = require('@supabase/supabase-js');
 const path = require('path');
 const { LEVELS, BOOSTS, MISSIONS, CARDS, WHEEL_REWARDS, FEATURES } = require('./config/game-config');
 const registerExtraRoutes = require('./server/register-extra-routes');
+const { getEnv } = require('./server/env');
+const { isAdminAuthorized } = require('./server/middleware/admin-auth');
+const { createRateLimiter } = require('./server/middleware/rate-limit');
 
+const env = getEnv();
 const app = express();
 app.use(cors());
 app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
 
-const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_KEY);
-const bot = new TelegramBot(process.env.BOT_TOKEN, { polling: true });
-const ADMIN_SECRET = process.env.ADMIN_SECRET || 'change-me';
-const rateLimitStore = new Map();
-
-function applyRateLimit(key, limit, windowMs) {
-    const now = Date.now();
-    const current = rateLimitStore.get(key) || { count: 0, resetAt: now + windowMs };
-    if (current.resetAt <= now) {
-        current.count = 0;
-        current.resetAt = now + windowMs;
-    }
-    current.count += 1;
-    rateLimitStore.set(key, current);
-    return current.count <= limit;
-}
+const supabase = createClient(env.SUPABASE_URL, env.SUPABASE_KEY);
+const bot = new TelegramBot(env.BOT_TOKEN, { polling: true });
+const ADMIN_SECRET = env.ADMIN_SECRET;
+const { applyRateLimit } = createRateLimiter();
 
 app.use((req, res, next) => {
     if (req.path.includes('/api/user/') && req.path.endsWith('/tap')) {
@@ -104,7 +95,7 @@ async function registerUser(msg, referrerId) {
 
 function sendWelcome(chatId) {
     bot.sendMessage(chatId, '🎮 Bienvenue sur Kira Game !', {
-        reply_markup: { inline_keyboard: [[{ text: '🎮 Jouer', web_app: { url: process.env.APP_URL } }]] }
+        reply_markup: { inline_keyboard: [[{ text: '🎮 Jouer', web_app: { url: env.APP_URL } }]] }
     });
 }
 
@@ -120,7 +111,7 @@ async function sendNotification(telegramId, type, message) {
             .single();
         if (!existing) {
             await bot.sendMessage(telegramId, message, {
-                reply_markup: { inline_keyboard: [[{ text: '🎮 Jouer', web_app: { url: process.env.APP_URL } }]] }
+                reply_markup: { inline_keyboard: [[{ text: '🎮 Jouer', web_app: { url: env.APP_URL } }]] }
             });
             await supabase.from('notifications').insert({ telegram_id: telegramId, type, sent_date: today });
         }
@@ -273,17 +264,17 @@ app.post('/api/notify/:telegramId', async (req, res) => {
     try {
         const { message } = req.body;
         await bot.sendMessage(req.params.telegramId, message, {
-            reply_markup: { inline_keyboard: [[{ text: '🎮 Jouer', web_app: { url: process.env.APP_URL } }]] }
+            reply_markup: { inline_keyboard: [[{ text: '🎮 Jouer', web_app: { url: env.APP_URL } }]] }
         });
         res.json({ success: true });
     } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-app.listen(process.env.PORT, () => console.log(`✅ Serveur démarré sur le port ${process.env.PORT}`));
+app.listen(env.PORT, () => console.log(`✅ Serveur démarré sur le port ${env.PORT}`));
 console.log('🤖 Bot démarré...');
-console.log('SUPABASE_URL:', process.env.SUPABASE_URL ? '✅' : '❌');
-console.log('SUPABASE_KEY:', process.env.SUPABASE_KEY ? '✅' : '❌');
-console.log('BOT_TOKEN:', process.env.BOT_TOKEN ? '✅' : '❌');
+console.log('SUPABASE_URL:', env.SUPABASE_URL ? '✅' : '❌');
+console.log('SUPABASE_KEY:', env.SUPABASE_KEY ? '✅' : '❌');
+console.log('BOT_TOKEN:', env.BOT_TOKEN ? '✅' : '❌');
 
 // WHEEL SPIN
 app.post('/api/wheel/:telegramId/spin', async (req, res) => {
@@ -362,6 +353,7 @@ const ADMIN_PASSWORD = ADMIN_SECRET;
 // ADMIN STATS
 app.get('/api/admin/stats', async (req, res) => {
     try {
+        if (!isAdminAuthorized(req, ADMIN_SECRET)) return res.status(401).json({ error: 'Non autorisé' });
         const { data: users } = await supabase.from('users').select('*').order('coins', { ascending: false });
         const today = new Date().toISOString().split('T')[0];
         const { data: spins } = await supabase.from('wheel_spins').select('*').eq('spun_date', today);
@@ -387,7 +379,7 @@ app.post('/api/admin/notify-all', async (req, res) => {
         for (const user of users || []) {
             try {
                 await bot.sendMessage(user.telegram_id, message, {
-                    reply_markup: { inline_keyboard: [[{ text: '🎮 Jouer', web_app: { url: process.env.APP_URL } }]] }
+                    reply_markup: { inline_keyboard: [[{ text: '🎮 Jouer', web_app: { url: env.APP_URL } }]] }
                 });
                 sent++;
                 await new Promise(r => setTimeout(r, 100));
@@ -409,7 +401,7 @@ app.post('/api/admin/give-coins', async (req, res) => {
             total_coins: (user.total_coins || 0) + amount
         }).eq('telegram_id', telegramId).select().single();
         await bot.sendMessage(telegramId, `🎁 L'admin t'a offert ${amount} coins ! Merci de jouer à Kira Game ! 🎮`, {
-            reply_markup: { inline_keyboard: [[{ text: '🎮 Jouer', web_app: { url: process.env.APP_URL } }]] }
+            reply_markup: { inline_keyboard: [[{ text: '🎮 Jouer', web_app: { url: env.APP_URL } }]] }
         });
         res.json(updated);
     } catch (err) { res.status(500).json({ error: err.message }); }
@@ -436,7 +428,7 @@ app.get('/api/user/:telegramId/photo', async (req, res) => {
         if (photos.total_count > 0) {
             const fileId = photos.photos[0][0].file_id;
             const file = await bot.getFile(fileId);
-            const photoUrl = `https://api.telegram.org/file/bot${process.env.BOT_TOKEN}/${file.file_path}`;
+            const photoUrl = `https://api.telegram.org/file/bot${env.BOT_TOKEN}/${file.file_path}`;
             res.json({ photoUrl });
         } else {
             res.json({ photoUrl: null });
@@ -504,7 +496,7 @@ app.post('/api/shop/:telegramId/buy-coins', async (req, res) => {
         await supabase.from('shop_purchases').insert({ telegram_id: req.params.telegramId, item_id: itemId, price_coins: item.priceCoins });
 
         bot.sendMessage(req.params.telegramId, `✅ Achat réussi ! Tu as acheté ${item.icon} ${item.name} !`, {
-            reply_markup: { inline_keyboard: [[{ text: '🎮 Jouer', web_app: { url: process.env.APP_URL } }]] }
+            reply_markup: { inline_keyboard: [[{ text: '🎮 Jouer', web_app: { url: env.APP_URL } }]] }
         });
 
         res.json(updated);
@@ -536,7 +528,7 @@ app.post('/api/shop/:telegramId/buy-ton', async (req, res) => {
         await supabase.from('shop_purchases').insert({ telegram_id: req.params.telegramId, item_id: itemId, price_ton: item.priceTon });
 
         bot.sendMessage(req.params.telegramId, `✅ Achat TON réussi ! Tu as acheté ${item.icon} ${item.name} !`, {
-            reply_markup: { inline_keyboard: [[{ text: '🎮 Jouer', web_app: { url: process.env.APP_URL } }]] }
+            reply_markup: { inline_keyboard: [[{ text: '🎮 Jouer', web_app: { url: env.APP_URL } }]] }
         });
 
         res.json(updated);
@@ -624,6 +616,7 @@ app.post('/api/admin/promo/create', async (req, res) => {
 // GET PROMO CODES (Admin)
 app.get('/api/admin/promos', async (req, res) => {
     try {
+        if (!isAdminAuthorized(req, ADMIN_SECRET)) return res.status(401).json({ error: 'Non autorisé' });
         const { data: promos } = await supabase.from('promo_codes').select('*').order('created_at', { ascending: false });
         res.json(promos || []);
     } catch (err) { res.status(500).json({ error: err.message }); }
@@ -795,4 +788,5 @@ registerExtraRoutes(app, {
     getLevel,
     features: FEATURES,
     adminSecret: ADMIN_SECRET,
+    botUsername: env.BOT_USERNAME,
 });
