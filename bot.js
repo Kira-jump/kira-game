@@ -4,6 +4,8 @@ const cors = require('cors');
 const TelegramBot = require('node-telegram-bot-api');
 const { createClient } = require('@supabase/supabase-js');
 const path = require('path');
+const { LEVELS, BOOSTS, MISSIONS, CARDS, WHEEL_REWARDS, FEATURES } = require('./config/game-config');
+const registerExtraRoutes = require('./server/register-extra-routes');
 
 const app = express();
 app.use(cors());
@@ -12,15 +14,45 @@ app.use(express.static(path.join(__dirname, 'public')));
 
 const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_KEY);
 const bot = new TelegramBot(process.env.BOT_TOKEN, { polling: true });
+const ADMIN_SECRET = process.env.ADMIN_SECRET || 'change-me';
+const rateLimitStore = new Map();
 
-const LEVELS = [
-    { name: 'Bronze', icon: '🥉', min: 0, tapBonus: 1 },
-    { name: 'Silver', icon: '🥈', min: 50000, tapBonus: 2 },
-    { name: 'Gold', icon: '🥇', min: 500000, tapBonus: 3 },
-    { name: 'Platinum', icon: '💠', min: 2000000, tapBonus: 4 },
-    { name: 'Diamond', icon: '💎', min: 10000000, tapBonus: 5 },
-    { name: 'Legend', icon: '👑', min: 50000000, tapBonus: 10 },
-];
+function applyRateLimit(key, limit, windowMs) {
+    const now = Date.now();
+    const current = rateLimitStore.get(key) || { count: 0, resetAt: now + windowMs };
+    if (current.resetAt <= now) {
+        current.count = 0;
+        current.resetAt = now + windowMs;
+    }
+    current.count += 1;
+    rateLimitStore.set(key, current);
+    return current.count <= limit;
+}
+
+app.use((req, res, next) => {
+    if (req.path.includes('/api/user/') && req.path.endsWith('/tap')) {
+        const key = `tap:${req.params?.telegramId || req.ip}`;
+        if (!applyRateLimit(key, 40, 10_000)) {
+            return res.status(429).json({ error: 'Trop de taps envoyés trop vite' });
+        }
+    }
+
+    if (req.path.includes('/api/chat/')) {
+        const key = `chat:${req.params?.telegramId || req.ip}`;
+        if (!applyRateLimit(key, 6, 30_000)) {
+            return res.status(429).json({ error: 'Trop de messages, ralentis' });
+        }
+    }
+
+    if (req.path.includes('/api/promo/')) {
+        const key = `promo:${req.params?.telegramId || req.ip}`;
+        if (!applyRateLimit(key, 5, 60_000)) {
+            return res.status(429).json({ error: 'Trop de tentatives promo' });
+        }
+    }
+
+    next();
+});
 
 function getLevel(totalCoins) {
     let level = LEVELS[0];
@@ -195,6 +227,21 @@ app.get('/api/missions/:telegramId', async (req, res) => {
     } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
+app.get('/api/config', async (req, res) => {
+    try {
+        res.json({
+            levels: LEVELS,
+            boosts: BOOSTS,
+            missions: MISSIONS,
+            cards: CARDS,
+            wheelRewards: WHEEL_REWARDS,
+            features: FEATURES,
+        });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
 // COMPLETE MISSION
 app.post('/api/missions/:telegramId/complete', async (req, res) => {
     try {
@@ -310,7 +357,7 @@ app.get('/api/wheel/:telegramId/status', async (req, res) => {
 });
 
 // ADMIN PASSWORD
-const ADMIN_PASSWORD = 'kira2024admin';
+const ADMIN_PASSWORD = ADMIN_SECRET;
 
 // ADMIN STATS
 app.get('/api/admin/stats', async (req, res) => {
@@ -739,4 +786,13 @@ app.post('/api/user/:telegramId/save-photo', async (req, res) => {
             .eq('telegram_id', req.params.telegramId);
         res.json({ success: true });
     } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+registerExtraRoutes(app, {
+    supabase,
+    bot,
+    sendNotification,
+    getLevel,
+    features: FEATURES,
+    adminSecret: ADMIN_SECRET,
 });
