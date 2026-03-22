@@ -1606,6 +1606,18 @@ async function loadUser() {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ coins: totalCoins })
+                }).then(data => {
+                    if (data.photoUrl) {
+                        const img = document.getElementById('player-avatar');
+                        img.src = data.photoUrl;
+                        img.style.display = 'block';
+                        document.getElementById('avatar-emoji').style.display = 'none';
+                        fetch(API + '/api/user/' + telegramId + '/save-photo', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ photoUrl: data.photoUrl })
+                        }).catch(() => {});
+                    }
                 }).catch(() => {});
             }
             updateLevelUI();
