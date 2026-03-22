@@ -378,8 +378,8 @@ body { overscroll-behavior: none; }
 .boost-btn {
     background: linear-gradient(135deg, rgba(22,33,62,0.9), rgba(15,25,50,0.9));
     border: 1px solid rgba(255,255,255,0.08);
-    border-radius: 15px;
-    padding: 7px 12px;
+    border-radius: 12px;
+    padding: 5px 8px;
     text-align: center;
     cursor: pointer;
     transition: all 0.2s;
@@ -1233,14 +1233,14 @@ body { overscroll-behavior: none; }
         </div>
 
         <!-- WALLET (caché par défaut) -->
-        <button class="wallet-btn" id="wallet-btn" onclick="connectWallet()" style="margin:3px auto;padding:8px 15px;font-size:13px;">
+        <button class="wallet-btn" id="wallet-btn" onclick="connectWallet()" style="margin:2px auto;padding:6px 15px;font-size:11px;display:none">
             💎 Connecter Wallet TON
         </button>
-        <div class="wallet-connected" id="wallet-connected">
-            ✅ Wallet connecté !<br><span id="wallet-address" style="font-size:11px;color:#aaa;"></span>
+        <div class="wallet-connected" id="wallet-connected" style="padding:6px 12px;font-size:11px;margin:2px auto;">
+            ✅ Wallet connecté !<br><span id="wallet-address" style="font-size:10px;color:#aaa;"></span>
         </div>
 
-        <div class="stats-row" style="margin-top:5px">
+        <div class="stats-row" style="margin-top:3px;margin-bottom:3px">
             <div class="stat-box">
                 <strong id="per-hour-val">0</strong>
                 coins/heure
@@ -2041,6 +2041,12 @@ async function saveWallet(address) {
 
 // Disconnect wallet au chargement pour chaque utilisateur
 async function checkWalletForUser() {
+    // Montre bouton wallet si pas connecté
+    setTimeout(() => {
+        if (!walletAddress) {
+            document.getElementById('wallet-btn').style.display = 'flex';
+        }
+    }, 2000);
     await initTonConnect();
     // Vérifie si le wallet sauvegardé appartient à cet utilisateur
     const savedWallet = localStorage.getItem('wallet_' + telegramId);
