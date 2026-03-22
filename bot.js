@@ -178,7 +178,7 @@ app.get('/api/leaderboard', async (req, res) => {
         const level = req.query.level || 'Bronze';
         const { data: users } = await supabase
             .from('users')
-            .select('username, coins, level, avatar')
+            .select('username, coins, level, avatar, photo_url, telegram_id')
             .eq('level', level)
             .order('coins', { ascending: false })
             .limit(20);
@@ -726,5 +726,17 @@ app.post('/api/chat/:telegramId', async (req, res) => {
             .lt('created_at', new Date(Date.now() - 48 * 3600 * 1000).toISOString());
 
         res.json(newMsg);
+    } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+// SAVE PHOTO URL
+app.post('/api/user/:telegramId/save-photo', async (req, res) => {
+    try {
+        const { photoUrl } = req.body;
+        await supabase
+            .from('users')
+            .update({ photo_url: photoUrl })
+            .eq('telegram_id', req.params.telegramId);
+        res.json({ success: true });
     } catch (err) { res.status(500).json({ error: err.message }); }
 });
